@@ -39,6 +39,9 @@ class TMRobotController(Node):
         self._min_send_interval = 0.20  
         self._last_send_ts = 0.0
 
+        self._last_joint_cmd = None
+        should_append = False
+
         self.ee_digital_output = [0, 0, 1, 0]  
         self.target_ee_output = None
         self.waiting_for_gripper = False
@@ -205,9 +208,9 @@ class TMRobotController(Node):
 
     def append_joint(self,
                      joint_values: list,
-                     vel: float = 50,
-                     acc: float = 50,
-                     coord: int = 0,
+                     vel: float = 40,
+                     acc: float = 20,
+                     coord: int = 100,
                      fine: bool = False,
                      wait_time: float = 0.0,
                      need_wait: bool = False,
@@ -217,6 +220,20 @@ class TMRobotController(Node):
             self.get_logger().error("Joint 必須 6 個數字")
             return False
 
+        JOINT_DELTA_THRESHOLD_DEG = 3.5
+        should_append = False
+        if self._last_joint_cmd is None:
+            # 第一筆資料必加
+            should_append = True
+        else:
+            for i in range(6):
+                if abs(float(joint_values[i]) - float(self._last_joint_cmd[i])) > JOINT_DELTA_THRESHOLD_DEG:
+                    should_append = True
+                    break
+        if not should_append:
+            return True                
+
+
         fine_str = "true" if fine else "false"
         script = (
             f'PTP("JPP",{joint_values[0]:.2f}, {joint_values[1]:.2f}, '
@@ -224,6 +241,7 @@ class TMRobotController(Node):
             f'{joint_values[4]:.2f}, {joint_values[5]:.2f},'
             f'{vel},{acc},{coord},{fine_str})'
         )
+        self._last_joint_cmd = list(joint_values)
 
         # 1) 指令排進 queue
         self.tcp_queue.append({
