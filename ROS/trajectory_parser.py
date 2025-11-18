@@ -16,6 +16,7 @@ status_close_tight = [1, 1, 0]
 class Movement:
     def __init__(self, mode, joint_value = None):
         self.mode = mode
+        self.joints_values = []
         self.joint_value = joint_value
 
 def load_trajectory_from_csv(filename, delimiter=','):

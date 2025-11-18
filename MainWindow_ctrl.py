@@ -83,7 +83,7 @@ class main_window_ctrl(QMainWindow):
 
     def GraspGenCommunication_init(self):
         try:
-            self.graspGenCommunication = GraspGenCommunication()
+            self.graspGenCommunication = GraspGenCommunication(port_sender=9890, port_receiver=9891)
         except Exception as e:
             self.ui.textEdit_status.append(f"GraspGenCommunication_init error: {e}\n")
 
@@ -147,22 +147,37 @@ class main_window_ctrl(QMainWindow):
         try:
             # load nodes
             nodes = load_trajectory_from_csv(filename)
-
+            parsed_nodes = []
             print("Number of nodes:", len(nodes))
-
+            last_is_move = False
+            for i, node in enumerate(nodes):
+                if node.mode == Mode.MOVE:
+                    if last_is_move:
+                        parsed_nodes[-1].joints_values.append(list(np.deg2rad(node.joint_value)))
+                    else:
+                        parsed_nodes.append(node)
+                        parsed_nodes[-1].joints_values.append(list(np.deg2rad(node.joint_value)))
+                        last_is_move = True
+                else:
+                    last_is_move = False
+                    parsed_nodes.append(node)
+            nodes = parsed_nodes
             # append positions
             for node in nodes:
                 print("mode:", node.mode, "joint_value:", node.joint_value)
                 if node.mode == Mode.OPEN:
-                    self.rosCommunication.open_gripper() 
+                    # self.rosCommunication.open_gripper() 
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 3.0})
                 elif node.mode == Mode.CLOSE:
-                    self.rosCommunication.close_gripper() 
+                    # self.rosCommunication.close_gripper() 
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 3.0})
                 elif node.mode == Mode.HALF_OPEN:
-                    self.rosCommunication.half_open_gripper() 
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 3.0})
                 elif node.mode == Mode.CLOSE_TIGHT:
-                    self.rosCommunication.close_tight_gripper() 
-                else:
-                    self.rosCommunication.append_joints(node.joint_value, block=True)     
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 3.0})
+                elif node.mode == Mode.MOVE:
+                    # self.rosCommunication.append_joints(node.joint_value, block=False)     
+                    self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
 
         except Exception as e:
             raise e

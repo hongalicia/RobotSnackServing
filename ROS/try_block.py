@@ -12,9 +12,7 @@ from collections import deque
 from ROS.robot_state_collector import SingleRobotStateCollector
 
 
-
 def joints_close(a, b, tol_deg: float = 1.0) -> bool:
-
     if a is None or b is None:
         return False
     if len(a) < 6 or len(b) < 6:
@@ -31,28 +29,28 @@ class TMRobotController(Node):
 
         self.state_collector = state_collector
 
-
         self.tcp_queue = deque()
 
-        
         self._busy = False
-        self._min_send_interval = 0.20  
+        self._min_send_interval = 0.2
         self._last_send_ts = 0.0
 
         self._last_joint_cmd = None
         should_append = False
 
-        self.ee_digital_output = [0, 0, 1, 0]  
+        self.ee_digital_output = [0, 0, 1, 0]
         self.target_ee_output = None
         self.waiting_for_gripper = False
-        self._next_gripper_wait_after = 0.0  
+        self._next_gripper_wait_after = 0.0
 
-   
         self.states_need_to_wait = []
 
+        # add: busy timeout（避免卡死）
+        self._busy_started_ts = 0.0
+        self._busy_timeout_s = 8.0  # 可以依情況調整
 
-        self.create_timer(0.05, self._process_queue)       
-        self.create_timer(0.05, self._check_joint_reached) 
+        self.create_timer(0.01, self._process_queue)
+        self.create_timer(0.05, self._check_joint_reached)
 
         self.create_subscription(
             FeedbackState,
@@ -80,6 +78,7 @@ class TMRobotController(Node):
             (not self.states_need_to_wait)
         )
 
+    # ------------------ FeedbackState callback ------------------
 
     def feedback_callback(self, msg: FeedbackState):
         self.ee_digital_output = list(msg.ee_digital_output)
@@ -92,10 +91,11 @@ class TMRobotController(Node):
                 self.waiting_for_gripper = False
                 self.target_ee_output = None
 
-                # DO 達成後，再依 _next_gripper_wait_after 來等
                 wait_sec = float(self._next_gripper_wait_after)
                 self._next_gripper_wait_after = 0.0
                 self._start_gripper_wait_timer(wait_sec)
+
+    # ------------------ Timer helpers ------------------
 
     def _start_gripper_wait_timer(self, seconds: float):
         """DO 達成後，額外等待秒數，0 代表直接完成"""
@@ -124,6 +124,7 @@ class TMRobotController(Node):
             self._wait_timer_arm.cancel()
             del self._wait_timer_arm
 
+    # ------------------ joint 到位檢查 ------------------
 
     def _check_joint_reached(self):
         """用 /joint_states 的 joints_deg 檢查是否到達等待的目標關節角"""
@@ -147,10 +148,9 @@ class TMRobotController(Node):
             else:
                 self._arm_wait_done()
 
-
+    # ------------------ IO / 夾爪控制 ------------------
 
     def set_io(self, states: list):
-
         if not (isinstance(states, (list, tuple)) and len(states) == 3):
             self.get_logger().error("IO 狀態必須為長度 3 的 list，例如 [1,0,0]")
             return
@@ -168,13 +168,12 @@ class TMRobotController(Node):
 
             def _done(fut, pin=pin):
                 try:
-                    result = fut.result()
+                    _ = fut.result()
                     # if result.ok:
                     #     self.get_logger().info(f"✅ End_DO{pin} 設定成功")
-                    # else:
-                    #     a= 1
                 except Exception as e:
                     self.get_logger().error(f"[SetIO 失敗] {e}")
+                    # fix: 避免因為 SetIO 失敗卡死
                     self._busy = False
                     self.waiting_for_gripper = False
                     self.target_ee_output = None
@@ -191,13 +190,13 @@ class TMRobotController(Node):
         self.tcp_queue.append({
             "script": f"IO:{states[0]},{states[1]},{states[2]}",
             "wait_time": 2.0,
-            "need_wait": False,  
+            "need_wait": False,
         })
 
     def append_gripper_open(self, wait_after: float = 3.5):
         self.append_gripper_states([0, 0, 1], wait_after=wait_after)
 
-    def append_gripper_close(self, wait_after: float = 2):
+    def append_gripper_close(self, wait_after: float = 2.0):
         self.append_gripper_states([1, 0, 0], wait_after=wait_after)
 
     def append_gripper_half_open(self, wait_after: float = 3.5):
@@ -205,6 +204,8 @@ class TMRobotController(Node):
 
     def append_gripper_close_tight(self, wait_after: float = 3.5):
         self.append_gripper_states([1, 1, 0], wait_after=wait_after)
+
+    # ------------------ Joint 指令排隊 ------------------
 
     def append_joint(self,
                      joint_values: list,
@@ -220,10 +221,9 @@ class TMRobotController(Node):
             self.get_logger().error("Joint 必須 6 個數字")
             return False
 
-        JOINT_DELTA_THRESHOLD_DEG = 3.5
+        JOINT_DELTA_THRESHOLD_DEG = 4
         should_append = False
         if self._last_joint_cmd is None:
-            # 第一筆資料必加
             should_append = True
         else:
             for i in range(6):
@@ -231,8 +231,7 @@ class TMRobotController(Node):
                     should_append = True
                     break
         if not should_append:
-            return True                
-
+            return True
 
         fine_str = "true" if fine else "false"
         script = (
@@ -243,21 +242,18 @@ class TMRobotController(Node):
         )
         self._last_joint_cmd = list(joint_values)
 
-        # 1) 指令排進 queue
         self.tcp_queue.append({
             "script": script,
             "wait_time": float(wait_time),
             "need_wait": bool(need_wait),
         })
 
-        # 2) 只有 need_wait=True 才加入「關節到位等待條目」
         if need_wait:
             self.states_need_to_wait.append({
                 "joints": list(joint_values),
                 "time_to_wait": float(wait_time),
             })
 
-        # 3) 若 block=True，這裡同步等到 idle
         if block:
             if executor is None:
                 raise RuntimeError("append_joint(block=True) 需要傳入 executor 才能阻塞等待")
@@ -271,7 +267,21 @@ class TMRobotController(Node):
     # ------------------ Queue 處理邏輯 ------------------
 
     def _process_queue(self):
-        if self._busy or not self.tcp_queue:
+        # add: 如果 busy，就先檢查是否超時
+        if self._busy:
+            if self._busy_started_ts > 0 and (time.time() - self._busy_started_ts) > self._busy_timeout_s:
+                self.get_logger().warning(
+                    f"⚠️ _busy 狀態超過 {self._busy_timeout_s} 秒，"
+                    f"自動解鎖以避免卡死（清空等待狀態）"
+                )
+                self._busy = False
+                self.waiting_for_gripper = False
+                self.target_ee_output = None
+                self.states_need_to_wait.clear()
+            else:
+                return
+
+        if not self.tcp_queue:
             return
 
         now = time.time()
@@ -280,12 +290,13 @@ class TMRobotController(Node):
 
         item = self.tcp_queue.popleft()
         cmd = item["script"]
-        wait_time = item.get("wait_time", 0.0)
+        wait_time = item.get("wait_time", 0.05)
         need_wait = item.get("need_wait", True)
 
         self._last_send_ts = now
         self._busy = True
-        #print("settrue------------------")
+        self._busy_started_ts = now  # add: 記錄 busy 開始時間
+
         # IO 指令
         if isinstance(cmd, str) and cmd.startswith("IO:"):
             try:
@@ -313,17 +324,17 @@ class TMRobotController(Node):
                 if getattr(res, "ok", False):
                     self.get_logger().info("指令執行成功")
                 else:
-                    a=1
-                #print("try to set false-------------------")
+                    self.get_logger().warn("⚠️ SendScript 回傳 ok=false")
                 if not need_wait:
                     self._busy = False
-                    #print("set false-------------------")
             except Exception as e:
                 self.get_logger().error(f"[SendScript 失敗] {e}")
                 self._busy = False
                 self.states_need_to_wait.clear()
 
         future.add_done_callback(_done)
+
+    # ------------------ 公用函式 ------------------
 
     def spin_once(self, executor: SingleThreadedExecutor, timeout_sec: float = 0.05):
         executor.spin_once(timeout_sec=timeout_sec)
@@ -345,12 +356,12 @@ class TMRobotController(Node):
         return True
 
 
+# ------------------ main ------------------
+
 def main():
     rclpy.init()
 
     collector = SingleRobotStateCollector(fps=30)
-
-
     node = TMRobotController(collector)
 
     executor = SingleThreadedExecutor()
@@ -362,15 +373,14 @@ def main():
         j1 = [2.01, -10.63, 120.00, 70.83, -87.79, 179.26]
         j2 = [2.01, -10.63, 140.18, 70.83, -87.79, 179.26]
         j3 = [2.01, -10.63, 134.00, 70.83, -87.79, 179.26]
-        node.append_joint(j1,block=False)
 
+        node.append_joint(j1, block=False)
         node.append_gripper_open()
+        node.append_joint(j2, block=False)
 
-        node.append_joint(j2,block=False,)
-
-        node.append_joint(j1,block=True,executor=executor,)
+        node.append_joint(j1, block=True, executor=executor)
         node.append_gripper_close()
-        node.append_joint(j3,block=False,)
+        node.append_joint(j3, block=False)
 
         print("hi")
         while rclpy.ok():
