@@ -106,11 +106,12 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"ros_destroy error: {e}\n")
         
     def pushButton_CheckPeanuts_clicked(self):
+        # output = self.check_peanuts(save_image=True)
         output = self.check_peanuts()
         # output = self.check_peanuts('PeanutNumberClassification/operating-sub.png') only use when debugging
         self.ui.textEdit_status.append(f"check_peanuts output: {output}\n")
 
-    def check_peanuts(self, image_path=None):       
+    def check_peanuts(self, image_path=None, save_image = False):       
         try:
             if image_path is not None:
                 image = cv2.imread(image_path)
@@ -126,6 +127,8 @@ class main_window_ctrl(QMainWindow):
 
             # show image
             image_showed = np.ascontiguousarray(image)
+            if save_image:
+                cv2.imwrite(f'PeanutNumberClassification/dataset/peanuts_image{int(time.time())}.png', image_showed)
             peanuts_image = QImage(image_showed, image_showed.shape[1], image_showed.shape[0], 3 * image_showed.shape[1], QImage.Format.Format_BGR888)
             peanuts_pixmap = QPixmap.fromImage(peanuts_image)    
             peanuts_pixmap_scaled = peanuts_pixmap.scaled(self.ui.label_image_peanuts.width(), self.ui.label_image_peanuts.height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio)
@@ -171,11 +174,11 @@ class main_window_ctrl(QMainWindow):
                     self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 3.0})
                 elif node.mode == Mode.CLOSE:
                     # self.rosCommunication.close_gripper() 
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 3.0})
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 1.5})
                 elif node.mode == Mode.HALF_OPEN:
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 3.0})
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 1.5})
                 elif node.mode == Mode.CLOSE_TIGHT:
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 3.0})
+                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 1.5})
                 elif node.mode == Mode.MOVE:
                     # self.rosCommunication.append_joints(node.joint_value, block=False)     
                     self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
