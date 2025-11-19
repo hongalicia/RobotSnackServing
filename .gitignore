@@ -216,4 +216,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 # CSV stuff
-ROS/trajectories/.~lock.get_spoon.csv#
+ROS/trajectories/**.csv#
+
+# Peanut dataset images
+PeanutNumberClassification/dataset/
