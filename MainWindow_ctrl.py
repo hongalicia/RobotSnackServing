@@ -106,7 +106,8 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"ros_destroy error: {e}\n")
         
     def pushButton_CheckPeanuts_clicked(self):
-        output = self.check_peanuts('PeanutNumberClassification/operating-sub.png')
+        output = self.check_peanuts()
+        # output = self.check_peanuts('PeanutNumberClassification/operating-sub.png') only use when debugging
         self.ui.textEdit_status.append(f"check_peanuts output: {output}\n")
 
     def check_peanuts(self, image_path=None):       
