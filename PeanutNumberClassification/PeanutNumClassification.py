@@ -2,7 +2,7 @@ from ultralytics import YOLO
 
 class PeanutNumClassification:
     def __init__(self):
-        self.model = YOLO("PeanutNumberClassification/model/yolo11n-cls_peanut_20251106.pt")  # load the model for classification
+        self.model = YOLO("PeanutNumberClassification/model/yolo11s-cls_peanut_20251119.pt")  # load the model for classification
 
     def classify(self, image):
         results_cls = self.model(image, verbose=False)  # predict on an image
