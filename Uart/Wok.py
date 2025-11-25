@@ -1,9 +1,11 @@
 import threading
 import time
-import UART
+from Uart import UART
+from PySide6.QtCore import QThread, Signal
 
+class Wok(QThread):
+    pan_position = Signal(str)
 
-class Wok(threading.Thread):
     def __init__(self):
         super().__init__()
         self._stop_event = threading.Event()  # 用於停止執行緒的旗標
@@ -57,16 +59,18 @@ class Wok(threading.Thread):
                 case 77:  # 'w'
                     match data[3]:
                         case 1:
+                            self.pan_position.emit("home")
                             print("wok home done")
                         case 2:
+                            self.pan_position.emit("down")
                             print("wok down done")
 
 
 if __name__ == "__main__":
     wok = Wok()
     wok.flip()
-    time.sleep(5)
-    wok.home()
-    time.sleep(3)
-    wok.down()
-    time.sleep(1)
+    # time.sleep(5)
+    # wok.home()
+    # time.sleep(3)
+    # wok.down()
+    # time.sleep(1)

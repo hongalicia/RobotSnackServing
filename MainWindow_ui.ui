@@ -261,6 +261,120 @@
        <string>Drop Spoon</string>
       </property>
      </widget>
+     <widget class="QLabel" name="label_task_peanuts">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>320</y>
+        <width>120</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Task:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ServePeanuts">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>320</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Serve Peanuts</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_NumOfPeanuts">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>320</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_NumOfPeanuts">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>332</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Num of Peanuts:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_Wok">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>230</y>
+        <width>120</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Wok:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WokHome">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>230</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Home</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WokDown">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>230</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Down</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WokFlip">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>270</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Flip</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WokAC">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>270</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>AC</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QGroupBox" name="groupBox_waffle">
      <property name="geometry">
@@ -389,6 +503,55 @@
       </property>
       <property name="text">
        <string>Get Cooked Waffle</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ServeWaffle">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>230</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Serve Waffle</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>230</y>
+        <width>120</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Task:</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_NumOfWaffle">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>230</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_NumOfPeanuts_2">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>242</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Num of Waffle:</string>
       </property>
      </widget>
     </widget>
