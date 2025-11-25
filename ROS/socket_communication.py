@@ -39,7 +39,7 @@ class NonBlockingJSONSender:
     Connects automatically upon instantiation.
     """
 
-    def __init__(self, host="localhost", port=9870):
+    def __init__(self, port, host="localhost"):
         self.host = host
         self.port = port
         self.socket = None
@@ -60,9 +60,7 @@ class NonBlockingJSONSender:
             logger.info(f"Sender connected to receiver at {self.host}:{self.port}")
             return True
         except ConnectionRefusedError:
-            logger.exception(
-                f"Connection failed. Is the bridge.py script running on {self.host}:{self.port}?"
-            )
+            logger.warning(f"No socket currently listening at {self.host}:{self.port}")
             self.socket = None
             return False
         except Exception as e:
@@ -77,7 +75,7 @@ class NonBlockingJSONSender:
         if self.socket:
             self.socket.close()
             self.socket = None
-            logger.warning("Sender disconnected")
+            logger.info("Sender disconnected")
 
     def reconnect(self) -> bool:
         """
@@ -94,7 +92,7 @@ class NonBlockingJSONSender:
         Returns True on successful send, False otherwise.
         """
         if not self.socket:
-            logger.warning("Connection not established. Attempting to reconnect.")
+            logger.info("Connection not established. Attempting to reconnect.")
             if not self.reconnect():
                 return False
 
@@ -106,10 +104,10 @@ class NonBlockingJSONSender:
                 # A recv with MSG_PEEK will not remove data from buffer.
                 # If it returns b'', the peer has closed the connection.
                 if self.socket.recv(1, socket.MSG_PEEK) == b"":
-                    logger.warning("Receiver has closed the connection.")
+                    logger.warning("The other peer's receiver has disconnected.")
                     raise BrokenPipeError("Connection closed by peer")
         except BrokenPipeError:
-            logger.warning("Connection lost. Attempting to reconnect and resend.")
+            logger.info("Connection lost. Attempting to reconnect and resend.")
             if self.reconnect():
                 return self.send_data(data)  # Retry sending
             else:
@@ -146,7 +144,7 @@ class NonBlockingJSONReceiver:
     Connects automatically upon instantiation.
     """
 
-    def __init__(self, host="localhost", port=9870):
+    def __init__(self, port, host="localhost"):
         self.host = host
         self.port = port
         self.socket = None
@@ -197,14 +195,14 @@ class NonBlockingJSONReceiver:
                 self.buffer = b""
                 self.msg_len = None
                 logger.info(f"Accepted connection from {addr}")
-
-            data = self.conn.recv(4096)
-            if not data:
-                logger.warning("Sender disconnected.")
-                self.conn.close()
-                self.conn = None
-                return None
-            self.buffer += data
+            while True:
+                data = self.conn.recv(4096)
+                if not data:
+                    logger.warning("The other peer's sender has disconnected.")
+                    self.conn.close()
+                    self.conn = None
+                    return None
+                self.buffer += data
         except BlockingIOError:
             pass  # No data available
         except Exception as e:
@@ -221,18 +219,20 @@ class NonBlockingJSONReceiver:
                 self.buffer = self.buffer[4:]
             else:
                 return None  # Not enough data for header
+        # check message length
+        if len(self.buffer) < self.msg_len:
+            raise ValueError(
+                "Message length defined in the header is larger than the received buffer size, shouldn't happen"
+            )
 
-        if len(self.buffer) >= self.msg_len:
-            message_bytes = self.buffer[: self.msg_len]
-            self.buffer = self.buffer[self.msg_len :]
-            self.msg_len = None  # Reset for next message
-            try:
-                return json.loads(message_bytes.decode("utf-8"))
-            except json.JSONDecodeError as e:
-                logger.exception(f"JSON decode error: {e}")
-                return None
-
-        return None  # Not enough data for full message
+        message_bytes = self.buffer[: self.msg_len]
+        self.buffer = self.buffer[self.msg_len :]
+        self.msg_len = None  # Reset for next message
+        try:
+            return json.loads(message_bytes.decode("utf-8"))
+        except json.JSONDecodeError as e:
+            logger.exception(f"JSON decode error: {e}")
+            return None
 
 
 class BlockingJSONReceiver:
@@ -241,7 +241,7 @@ class BlockingJSONReceiver:
     Connects automatically upon instantiation.
     """
 
-    def __init__(self, host="localhost", port=9870):
+    def __init__(self, port, host="localhost"):
         self.host = host
         self.port = port
         self.socket = None
