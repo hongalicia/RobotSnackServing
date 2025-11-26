@@ -1,13 +1,20 @@
 import threading
 import time
-import UART
-
+from Uart import UART
+import queue
 
 class Wok(threading.Thread):
+    #pan_position = Signal(str)
+
     def __init__(self):
         super().__init__()
         self._stop_event = threading.Event()  # 用於停止執行緒的旗標
         self._init_ = UART.com_port_init()
+        self.received_status = queue.Queue()
+        # 啟動接收執行緒
+        self.recv_thread = threading.Thread(
+            target=self.run, daemon=True)
+        self.recv_thread.start()
 
     def run(self):
         while not self._stop_event.is_set():
@@ -54,19 +61,26 @@ class Wok(threading.Thread):
         print(f"recv_data:{data}")
         if data[0] == 136 and data[1] == 102:  # 0x88 & 0x66
             match data[2]:
-                case 77:  # 'w'
+                case 119:  # 'w'
                     match data[3]:
                         case 1:
+                            #self.pan_position.emit("home")
+                            self.received_status.put("home")
                             print("wok home done")
                         case 2:
+                            self.received_status.put("down")
+                            #self.pan_position.emit("down")
                             print("wok down done")
 
 
 if __name__ == "__main__":
     wok = Wok()
-    wok.flip()
-    time.sleep(5)
-    wok.home()
-    time.sleep(3)
     wok.down()
-    time.sleep(1)
+    while True:
+        pass
+    # wok.flip()
+    # time.sleep(5)
+    # wok.home()
+    # time.sleep(3)
+    # wok.down()
+    # time.sleep(1)
