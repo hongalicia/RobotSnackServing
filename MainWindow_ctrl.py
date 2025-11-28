@@ -271,10 +271,10 @@ class main_window_ctrl(QMainWindow):
 
     def pushButton_GrabNDumpPeanuts_clicked(self):
          try:
-            # self.check_pan_pos(PAN_POS.DOWN)
+            self.check_pan_pos(PAN_POS.DOWN)
 
-            # if self.grabbing_spoon == True:
-            #     self.drop_spoon()
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
 
             data = {"actions": "Grasp_and_Dump"}
             message = self.graspGenCommunication.send_data(data)
