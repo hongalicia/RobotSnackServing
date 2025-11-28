@@ -71,6 +71,7 @@ class main_window_ctrl(QMainWindow):
         self.wait_for_flip_done = False
         self.first_start_time = 0
         self.left_seconds = 0
+        self.reheat = False
 
         if 'self.PeanutNumClassifier' not in globals():
             try:
@@ -133,8 +134,8 @@ class main_window_ctrl(QMainWindow):
 
     #region init
     def tcp_init(self):
-        self.tcp = TcpClient("192.168.1.99", 9000)
-        self.tcp.connect()
+        self.tcp = TcpClient("192.168.1.111", 9000)
+        #self.tcp.connect()
         self.thread_processing_orders = threading.Thread(target=self.serve_orders)
         self.thread_processing_orders.start() 
 
@@ -145,7 +146,6 @@ class main_window_ctrl(QMainWindow):
         self.wok = Wok()
         self.wok.down()
         self.pan_position = PAN_POS.DOWN
-        #self.wok.pan_position.connect(self.pan_position_received)
         self.thread_pan_position_check = threading.Thread(target=self.receive_pan_position)
         self.thread_pan_position_check.start()    
 
@@ -188,11 +188,10 @@ class main_window_ctrl(QMainWindow):
 
     #region threading
     def count_left_time(self):
-        while self.tcp.running:
-            if self.serve_orders == False:
-                break
+        while self.serving_orders == True:
 
-            self.tcp.left_time(self.left_seconds // 60, self.left_seconds % 60)
+            #self.tcp.left_time(self.left_seconds // 60, self.left_seconds % 60)
+            self.ui.lineEdit_LeftTime.setText(str(self.left_seconds)) 
             if self.left_seconds > 0:
                 self.left_seconds -= 1
 
@@ -377,8 +376,13 @@ class main_window_ctrl(QMainWindow):
             self.wait_for_flip_done = True
             self.ui.textEdit_status.append(f"Button pressed.\n")
 
-        if self.first_start_time != 0:
-            if time.time() - self.first_start_time >= self.time_waffle_heat:
+            if self.first_start_time != 0:
+                return 0
+            
+        elif self.reheat == True:
+            self.ui.textEdit_status.append(f"Re-heating.\n")
+            self.wait_for_flip_done = True
+            if self.first_start_time != 0:
                 return 0
 
         # get spoon
@@ -386,10 +390,6 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"Grabbing spoon...\n")
             self.get_spoon()
             self.ui.textEdit_status.append(f"Grab spoon done.\n")
-
-        if self.first_start_time != 0:
-            if time.time() - self.first_start_time >= self.time_waffle_heat:
-                return 0
 
         # check pan position
         while self.pan_position != PAN_POS.HOME:
@@ -614,6 +614,8 @@ class main_window_ctrl(QMainWindow):
 
             try:
                 order = self.tcp.received_orders.get()
+                self.ui.textEdit_status.append(f"Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
+
                 if order.waffle_num <= self.num_left_waffle:
                     self.num_left_waffle -= order.waffle_num
                     order.waffle_num = 0
@@ -622,7 +624,7 @@ class main_window_ctrl(QMainWindow):
                     self.num_left_waffle = 0
 
                 self.left_seconds = self.get_order_time(order)
-                self.ui.textEdit_status.append(f"left_seconds: {self.left_seconds}\n")
+                #self.tcp.send_time(self.left_seconds // 60, self.left_seconds % 60)
 
                 if self.serving_orders == False:
                     break
@@ -639,10 +641,10 @@ class main_window_ctrl(QMainWindow):
                     self.ui.textEdit_status.append(f"Serving waffle only.\n")
                     self.serve_waffle(order.waffle_num)
 
-                self.left_seconds = 0
-                self.tcp.send_end()
                 self.ui.textEdit_status.append(f"Serve order done: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
                 self.ui.textEdit_status.append(f"Number of left waffle: {self.num_left_waffle}.\n")
+                self.left_seconds = 0                 
+                #self.tcp.send_end()                
             except Exception as e:
                 self.ui.textEdit_status.append(f"serve_orders error: {e}\n")
 
@@ -672,8 +674,13 @@ class main_window_ctrl(QMainWindow):
         while count <= num_peanuts:
             done = self.spoon_peanuts()
             if done == 1:
-                count += 1
+                self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")
+                count += 1                
             else:
+                break
+
+            # check if waffle is ready before next spoon
+            if time.time() - self.first_start_time >= heating_time:
                 break
 
         # do waffle first if waffle is ready
@@ -703,6 +710,7 @@ class main_window_ctrl(QMainWindow):
         # back to peanuts when waffle is done
         while count <= num_peanuts:
             self.spoon_peanuts()
+            self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")
             count += 1
 
     def serve_waffle(self, num_waffle):

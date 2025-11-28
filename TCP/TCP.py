@@ -70,11 +70,6 @@ class TcpClient:
                         waffle_num = int.from_bytes(data[4].to_bytes(1, 'little'), byteorder='little')
                         new_order = order(peanut_num, waffle_num)
                         self.received_orders.put(new_order)
-
-                        left_min = self.min.to_bytes(1, 'little')
-                        left_sec = self.sec.to_bytes(1, 'little')
-                        send_data = b'\x88\x66\x6F' + left_min + left_sec + b'\x00\x00'
-                        self.check_sum(send_data)
                     case 81:  # 'Q'
                         print("Received 'Q' command.")
                         left_min = self.min.to_bytes(1, 'little')
@@ -105,6 +100,12 @@ class TcpClient:
 
     def send_data(self, data: bytes):
         self.sock.sendall(data)
+
+    def send_time(self, min, sec):
+        left_min = min.to_bytes(1, 'little')
+        left_sec = sec.to_bytes(1, 'little')
+        send_data = b'\x88\x66\x6F' + left_min + left_sec + b'\x00\x00'
+        self.check_sum(send_data)
 
     def send_end(self):
         send_data = b'\x88\x66\x65\x00\x00\x00\x00'

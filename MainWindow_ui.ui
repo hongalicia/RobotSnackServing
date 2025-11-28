@@ -122,7 +122,7 @@
        <x>10</x>
        <y>30</y>
        <width>541</width>
-       <height>371</height>
+       <height>321</height>
       </rect>
      </property>
      <property name="title">
@@ -245,55 +245,6 @@
        <string>Drop Spoon</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_task_peanuts">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>320</y>
-        <width>120</width>
-        <height>14</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Task:</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_ServePeanuts">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>320</y>
-        <width>180</width>
-        <height>40</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Serve Peanuts</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_NumOfPeanuts">
-      <property name="geometry">
-       <rect>
-        <x>480</x>
-        <y>320</y>
-        <width>41</width>
-        <height>41</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_NumOfPeanuts">
-      <property name="geometry">
-       <rect>
-        <x>340</x>
-        <y>332</y>
-        <width>131</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Num of Peanuts:</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_Wok">
       <property name="geometry">
        <rect>
@@ -364,9 +315,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>410</y>
+       <y>360</y>
        <width>541</width>
-       <height>561</height>
+       <height>421</height>
       </rect>
      </property>
      <property name="title">
@@ -411,45 +362,6 @@
        <string>ROS:</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_WaffleMachineOn">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>460</y>
-        <width>180</width>
-        <height>40</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Power On</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_9">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>460</y>
-        <width>120</width>
-        <height>14</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Machine:</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_WaffleMachingOff">
-      <property name="geometry">
-       <rect>
-        <x>340</x>
-        <y>460</y>
-        <width>180</width>
-        <height>40</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Power Off</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="pushButton_Open1stLid">
       <property name="geometry">
        <rect>
@@ -487,55 +399,6 @@
       </property>
       <property name="text">
        <string>Get 1st Waffle</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pushButton_ServeWaffle">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>510</y>
-        <width>180</width>
-        <height>40</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Serve Waffle</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_10">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>510</y>
-        <width>120</width>
-        <height>14</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Task:</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_NumOfWaffle">
-      <property name="geometry">
-       <rect>
-        <x>480</x>
-        <y>510</y>
-        <width>41</width>
-        <height>41</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_NumOfWaffle">
-      <property name="geometry">
-       <rect>
-        <x>340</x>
-        <y>522</y>
-        <width>131</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Num of Waffle:</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_Open2ndLid">
@@ -603,7 +466,7 @@
        <string>Close 2nd Lid</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_CloseL1stLid">
+     <widget class="QPushButton" name="pushButton_Close1stLid">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -708,6 +571,140 @@
       </property>
      </widget>
     </widget>
+    <widget class="QGroupBox" name="groupBox_Serve">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>790</y>
+       <width>541</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Serve</string>
+     </property>
+     <widget class="QLineEdit" name="lineEdit_NumOfPeanuts">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>40</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ServePeanuts">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>40</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Serve Peanuts</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_NumOfPeanuts">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>52</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Num of Peanuts:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_task_peanuts">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>120</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Task:</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_NumOfWaffle">
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>80</y>
+        <width>41</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ServeWaffle">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>80</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Serve Waffle</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_NumOfWaffle">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>92</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Num of Waffle:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_ServeBoth">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>120</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Serve Both</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_LeftTime">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>130</y>
+        <width>101</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Left Seconds:</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_LeftTime">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>120</y>
+        <width>61</width>
+        <height>41</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -716,7 +713,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>24</height>
+     <height>29</height>
     </rect>
    </property>
   </widget>
