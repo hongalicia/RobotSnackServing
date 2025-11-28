@@ -450,7 +450,7 @@
        <string>Power Off</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_OpenLeftLid">
+     <widget class="QPushButton" name="pushButton_Open1stLid">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -460,10 +460,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Open Left Lid</string>
+       <string>Open 1st Lid</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_PourLeftBatter">
+     <widget class="QPushButton" name="pushButton_Pour1stBatter">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -473,20 +473,20 @@
        </rect>
       </property>
       <property name="text">
-       <string>Pour Left Batter</string>
+       <string>Pour 1st Batter</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_GetLeftWaffle">
+     <widget class="QPushButton" name="pushButton_Get1stWaffle">
       <property name="geometry">
        <rect>
         <x>150</x>
-        <y>290</y>
+        <y>330</y>
         <width>180</width>
         <height>40</height>
        </rect>
       </property>
       <property name="text">
-       <string>Get Left Waffle</string>
+       <string>Get 1st Waffle</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_ServeWaffle">
@@ -538,7 +538,7 @@
        <string>Num of Waffle:</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_OpenRightLid">
+     <widget class="QPushButton" name="pushButton_Open2ndLid">
       <property name="geometry">
        <rect>
         <x>330</x>
@@ -548,10 +548,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Open Right Lid</string>
+       <string>Open 2nd Lid</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_PourRightBatter">
+     <widget class="QPushButton" name="pushButton_Pour2ndBatter">
       <property name="geometry">
        <rect>
         <x>330</x>
@@ -561,10 +561,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Pour Right Batter</string>
+       <string>Pour 2nd Batter</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_GrabLeftBatter">
+     <widget class="QPushButton" name="pushButton_Grab1stBatter">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -574,10 +574,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Grab Left Batter</string>
+       <string>Grab 1st Batter</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_GrabRightBatter">
+     <widget class="QPushButton" name="pushButton_Grab2ndBatter">
       <property name="geometry">
        <rect>
         <x>330</x>
@@ -587,10 +587,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Grab Right Batter</string>
+       <string>Grab 2nd Batter</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_CloseRightLid">
+     <widget class="QPushButton" name="pushButton_Close2ndLid">
       <property name="geometry">
        <rect>
         <x>330</x>
@@ -600,10 +600,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Close Right Lid</string>
+       <string>Close 2nd Lid</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_CloseLeftLid">
+     <widget class="QPushButton" name="pushButton_CloseL1stLid">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -613,23 +613,23 @@
        </rect>
       </property>
       <property name="text">
-       <string>Close Left Lid</string>
+       <string>Close 1st Lid</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_GetRightWaffle">
+     <widget class="QPushButton" name="pushButton_Get2ndWaffle">
       <property name="geometry">
        <rect>
         <x>330</x>
-        <y>290</y>
+        <y>330</y>
         <width>180</width>
         <height>40</height>
        </rect>
       </property>
       <property name="text">
-       <string>Get Right Waffle</string>
+       <string>Get 2nd Waffle</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_DropRightBatter">
+     <widget class="QPushButton" name="pushButton_Drop2ndBatter">
       <property name="geometry">
        <rect>
         <x>330</x>
@@ -639,10 +639,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Drop Right Batter</string>
+       <string>Drop 2nd Batter</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_DropLeftBatter">
+     <widget class="QPushButton" name="pushButton_Drop1stBatter">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -652,14 +652,14 @@
        </rect>
       </property>
       <property name="text">
-       <string>Drop Left Batter</string>
+       <string>Drop 1st Batter</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_DropFork">
       <property name="geometry">
        <rect>
         <x>330</x>
-        <y>330</y>
+        <y>290</y>
         <width>180</width>
         <height>40</height>
        </rect>
@@ -672,7 +672,7 @@
       <property name="geometry">
        <rect>
         <x>150</x>
-        <y>330</y>
+        <y>290</y>
         <width>180</width>
         <height>40</height>
        </rect>
@@ -692,6 +692,19 @@
       </property>
       <property name="text">
        <string>Drop Waffle</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_GoToDefault">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>370</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Go To Default</string>
       </property>
      </widget>
     </widget>
