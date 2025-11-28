@@ -19,10 +19,10 @@ cd ~/ITRI-GraspGen/isaac-sim2real && \
 omni_python sync_with_ROS2.py
 ```
 
-4. GraspGen Server(Optional, for GraspGen only)(Not finished yet):
+4. GraspGen Server(Optional, for GraspGen only):
 ```bash
 cd ~/ITRI-GraspGen && \
-uv run <GraspGen Server>
+uv run scripts/mia_server.py --no-confirm
 ```
 
 5. Open Main Window:
