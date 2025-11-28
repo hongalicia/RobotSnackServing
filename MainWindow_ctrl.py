@@ -276,7 +276,7 @@ class main_window_ctrl(QMainWindow):
             # if self.grabbing_spoon == True:
             #     self.drop_spoon()
 
-            data = {"ACTION_NAME": "GRASP_N_DUMP_PEANUTS"}
+            data = {"actions": "Grasp_and_Dump"}
             message = self.graspGenCommunication.send_data(data)
             self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
          except Exception as e:
