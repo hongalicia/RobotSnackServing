@@ -186,7 +186,7 @@ class main_window_ctrl(QMainWindow):
 
     def GraspGenCommunication_init(self):
         try:
-            self.graspGenCommunication = GraspGenCommunication(port_sender=9890, port_receiver=9891)
+            self.graspGenCommunication = GraspGenCommunication()
         except Exception as e:
             self.ui.textEdit_status.append(f"GraspGenCommunication_init error: {e}\n")
 
