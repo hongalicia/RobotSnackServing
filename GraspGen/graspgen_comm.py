@@ -4,7 +4,7 @@ from GraspGen.common_utils.socket_communication import (
 )
 
 class GraspGenCommunication:
-    def __init__(self, port_sender=9878, port_receiver=9879):
+    def __init__(self, port_sender=9890, port_receiver=9891):
         self.sender = NonBlockingJSONSender(port=port_sender)
         self.receiever = BlockingJSONReceiver(port=port_receiver)
 
