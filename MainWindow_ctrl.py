@@ -9,18 +9,13 @@ from PeanutNumberClassification.PeanutNumClassification import *
 from ROS.trajectory_parser import *
 from ROS.ros_comm import *
 from Uart.Wok import *
+from TCP.TCP import *
 
 import cv2
 import json
 import numpy as np
 from enum import Enum
-import queue
 import threading
-
-class order:
-    def __init__(self, peanuts_num, waffle_num):
-        self.peanuts_num = peanuts_num
-        self.waffle_num = waffle_num
 
 class PAN_POS(Enum):
     HOME = 1
@@ -53,25 +48,29 @@ class main_window_ctrl(QMainWindow):
 
         # functions for waffle
         self.ui.pushButton_GrabBatterNPour.clicked.connect(self.pushButton_GrabBatterNPour_clicked)
-        self.ui.pushButton_OpenLeftLid.clicked.connect(self.pushButton_OpenLeftLid_clicked)
-        self.ui.pushButton_GrabLeftBatter.clicked.connect(self.pushButton_GrabLeftBatter_clicked)
-        self.ui.pushButton_PourLeftBatter.clicked.connect(self.pushButton_PourLeftBatter_clicked)
-        self.ui.pushButton_DropLeftBatter.clicked.connect(self.pushButton_DropLeftBatter_clicked)
-        self.ui.pushButton_CloseLeftLid.clicked.connect(self.pushButton_CloseLeftLid_clicked)
-        self.ui.pushButton_GetLeftWaffle.clicked.connect(self.pushButton_GetLeftWaffle_clicked)  
-        self.ui.pushButton_OpenRightLid.clicked.connect(self.pushButton_OpenRightLid_clicked)
-        self.ui.pushButton_GrabRightBatter.clicked.connect(self.pushButton_GrabRightBatter_clicked)
-        self.ui.pushButton_PourRightBatter.clicked.connect(self.pushButton_PourRightBatter_clicked)
-        self.ui.pushButton_DropRightBatter.clicked.connect(self.pushButton_DropRightBatter_clicked)
-        self.ui.pushButton_CloseRightLid.clicked.connect(self.pushButton_CloseRightLid_clicked)
-        self.ui.pushButton_GetRightWaffle.clicked.connect(self.pushButton_GetRightWaffle_clicked)    
+        self.ui.pushButton_Open1stLid.clicked.connect(self.pushButton_Open1stLid_clicked)
+        self.ui.pushButton_Grab1stBatter.clicked.connect(self.pushButton_Grab1stBatter_clicked)
+        self.ui.pushButton_Pour1stBatter.clicked.connect(self.pushButton_Pour1stBatter_clicked)
+        self.ui.pushButton_Drop1stBatter.clicked.connect(self.pushButton_Drop1stBatter_clicked)
+        self.ui.pushButton_Close1stLid.clicked.connect(self.pushButton_Close1stLid_clicked)
+        self.ui.pushButton_Get1stWaffle.clicked.connect(self.pushButton_Get1stWaffle_clicked)  
+        self.ui.pushButton_Open2ndLid.clicked.connect(self.pushButton_Open2ndLid_clicked)
+        self.ui.pushButton_Grab2ndBatter.clicked.connect(self.pushButton_Grab2ndBatter_clicked)
+        self.ui.pushButton_Pour2ndBatter.clicked.connect(self.pushButton_Pour2ndBatter_clicked)
+        self.ui.pushButton_Drop2ndBatter.clicked.connect(self.pushButton_Drop2ndBatter_clicked)
+        self.ui.pushButton_Close2ndLid.clicked.connect(self.pushButton_Close2ndLid_clicked)
+        self.ui.pushButton_Get2ndWaffle.clicked.connect(self.pushButton_Get2ndWaffle_clicked)    
         self.ui.pushButton_GrabFork.clicked.connect(self.pushButton_GrabFork_clicked)
         self.ui.pushButton_DropFork.clicked.connect(self.pushButton_DropFork_clicked)  
         self.ui.pushButton_DropWaffle.clicked.connect(self.pushButton_DropWaffle_clicked)
         self.ui.pushButton_ServeWaffle.clicked.connect(self.pushButton_ServeWaffle_clicked)
+        self.ui.pushButton_GoToDefault.clicked.connect(self.pushButton_GoToDefault_clicked)
 
     def init(self):
         self.serving_orders = True
+        self.wait_for_flip_done = False
+        self.first_start_time = 0
+        self.left_seconds = 0
 
         if 'self.PeanutNumClassifier' not in globals():
             try:
@@ -97,8 +96,6 @@ class main_window_ctrl(QMainWindow):
         if 'self.cam' not in globals():
             try:
                 self.cam_init()
-                # frame = self.cam.capture_single(2)
-                # cv2.imwrite('test.png', frame)
             except Exception as e:
                 self.ui.textEdit_status.append(f"cam_init error: {e}\n")
                 return        
@@ -108,15 +105,41 @@ class main_window_ctrl(QMainWindow):
                 self.wok_init()
             except Exception as e:
                 self.ui.textEdit_status.append(f"wok_init error: {e}\n")
+                return  
+
+        if 'self.tcp' not in globals():
+            try:
+                self.tcp_init()
+            except Exception as e:
+                self.ui.textEdit_status.append(f"tcp_init error: {e}\n")
                 return         
 
-        self.orders = queue.Queue()
-        self.cooked_waffle = 0
+        self.num_left_waffle = 0
         self.grabbing_spoon = False
-        self.on_off = False
+        self.grabbing_fork = False
+        self.on_off = False          
 
+        self.time_peanut_spoon = 20
+        self.time_peanut_drop = 35
+        self.time_peanut_heat = 150
+        self.time_peanut_flip = 10
+        self.time_peanut_grab_spoon = 10
+        self.time_peanut_drop_spoon = 5
+
+        self.time_waffle_pour = 30
+        self.time_waffle_heat = 120
+        self.time_waffle_serve = 30
+        self.time_waffle_2nd_stove = 30
+
+    #region init
+    def tcp_init(self):
+        self.tcp = TcpClient("192.168.1.99", 9000)
+        self.tcp.connect()
         self.thread_processing_orders = threading.Thread(target=self.serve_orders)
-        self.thread_processing_orders.start()            
+        self.thread_processing_orders.start() 
+
+        self.thread_counting_left_time = threading.Thread(target=self.count_left_time)
+        self.thread_counting_left_time.start()
 
     def wok_init(self):
         self.wok = Wok()
@@ -124,21 +147,7 @@ class main_window_ctrl(QMainWindow):
         self.pan_position = PAN_POS.DOWN
         #self.wok.pan_position.connect(self.pan_position_received)
         self.thread_pan_position_check = threading.Thread(target=self.receive_pan_position)
-        self.thread_pan_position_check.start()            
-
-    def receive_pan_position(self):
-        while self.serving_orders == True:
-            if self.wok.received_status.empty() == False:                
-                position = self.wok.received_status.get()
-                self.pan_position_received(position)
-            time.sleep(0.01)
-
-    def pan_position_received(self, position):
-        print("receive_pan_position: ", position)
-        if position == "home":            
-            self.pan_position = PAN_POS.HOME
-        elif position == "down":
-            self.pan_position = PAN_POS.DOWN
+        self.thread_pan_position_check.start()    
 
     def cam_init(self):
         self.cam = Camera()
@@ -174,8 +183,37 @@ class main_window_ctrl(QMainWindow):
             self.rosCommunication.quit()
             print("ros_destroy done.")
         except Exception as e:
-            self.ui.textEdit_status.append(f"ros_destroy error: {e}\n")
-        
+            self.ui.textEdit_status.append(f"ros_destroy error: {e}\n") 
+    #endregion
+
+    #region threading
+    def count_left_time(self):
+        while self.tcp.running:
+            if self.serve_orders == False:
+                break
+
+            self.tcp.left_time(self.left_seconds // 60, self.left_seconds % 60)
+            if self.left_seconds > 0:
+                self.left_seconds -= 1
+
+            time.sleep(1)
+
+    def receive_pan_position(self):
+        while self.serving_orders == True:
+            if self.wok.received_status.empty() == False:                
+                position = self.wok.received_status.get()
+                self.pan_position_received(position)
+            time.sleep(0.01)    
+    #endregion
+
+    #region check pan position
+    def pan_position_received(self, position):
+        print("receive_pan_position: ", position)
+        if position == "home":            
+            self.pan_position = PAN_POS.HOME
+        elif position == "down":
+            self.pan_position = PAN_POS.DOWN
+
     def check_pan_pos(self, position):
         if position == PAN_POS.HOME:
             if self.pan_position != PAN_POS.HOME:                
@@ -195,7 +233,9 @@ class main_window_ctrl(QMainWindow):
                     time.sleep(0.1)
                     if time.time() - st_time > 5:
                         raise Exception("Error: Pan returning down failed.")
-                    
+    #endregion
+
+    #region check peanuts amount
     def pushButton_CheckPeanuts_clicked(self):
         try:
             # output = self.check_peanuts(save_image=True)
@@ -234,7 +274,9 @@ class main_window_ctrl(QMainWindow):
             return output
         except Exception as e:
             self.ui.textEdit_status.append(f"check_peanuts error: {e}\n")
+    #endregion           
 
+    #region graspgen
     def pushButton_GrabNDumpPeanuts_clicked(self):
          try:
             self.check_pan_pos(PAN_POS.DOWN)
@@ -247,6 +289,474 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
          except Exception as e:
             self.ui.textEdit_status.append(f"pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
+
+    def pushButton_GrabBatterNPour_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            data = {}
+            message = self.graspGenCommunication.send_data(data)
+            self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
+    #endregion
+
+    #region peanuts related
+    def press_button(self):
+        try:
+            self.run_trajectory("ROS/trajectories/press_button1.csv")
+            self.run_trajectory("ROS/trajectories/press_button2.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"press_button error: {e}\n")
+
+    def get_spoon(self):
+        try:
+            # status_peanuts = self.check_peanuts()
+            # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
+            # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
+            #     return
+
+            self.run_trajectory("ROS/trajectories/get_spoon.csv")
+            self.grabbing_spoon = True
+        except Exception as e:
+            self.ui.textEdit_status.append(f"get_spoon error: {e}\n")
+
+    def pushButton_SpoonPeanuts_clicked(self):
+        try:
+            self.check_pan_pos(PAN_POS.HOME)
+            #peanuts_status = self.check_peanuts()
+            #if peanuts_status == 'sufficient':
+            self.spoon_single_peanuts()
+            #else:
+            #    self.ui.textEdit_status.append(f"spoon_peanuts insufficient.")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"spoon_peanuts error: {e}\n")
+
+    def spoon_single_peanuts(self):
+        try:
+            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv")
+        except Exception as e:
+            raise e
+
+    def spoon_peanuts(self):
+        # check amount of peanuts, dump peanuts if insufficient
+        if self.wait_for_flip_done == True:
+            while self.pan_position != PAN_POS.HOME:
+                time.sleep(0.01)
+            self.wait_for_flip_done = False
+
+        status_peanuts = self.check_peanuts()
+        self.ui.textEdit_status.append(f"Check Peanuts Amount: {status_peanuts}\n")
+        while status_peanuts == 'operating':
+            time.sleep(0.01)
+            status_peanuts = self.check_peanuts()
+        while status_peanuts != 'sufficient':
+            self.ui.textEdit_status.append(f"Refilling Peanuts...\n")
+            self.left_seconds += self.time_peanut_drop
+            #self.pushButton_GrabNDumpPeanuts_clicked(self)
+            status_peanuts = self.check_peanuts()
+            if status_peanuts == 'sufficient':
+                self.refill = True   
+                self.ui.textEdit_status.append(f"Peanuts refilled.\n")
+                break
+            time.sleep(1)
+            self.left_seconds += 1
+
+        # press button
+        if self.refill == True:
+            if self.grabbing_spoon == True:
+                self.ui.textEdit_status.append(f"Dropping spoon...\n")
+                self.drop_spoon()
+                self.left_seconds += self.time_peanut_drop_spoon
+                self.ui.textEdit_status.append(f"Spoon dropped.\n")
+            self.pan_position = PAN_POS.DOWN
+            self.ui.textEdit_status.append(f"Pressing button...\n")
+            self.press_button()
+            self.left_seconds += self.time_peanut_heat
+            self.wait_for_flip_done = True
+            self.ui.textEdit_status.append(f"Button pressed.\n")
+
+        if self.first_start_time != 0:
+            if time.time() - self.first_start_time >= self.time_waffle_heat:
+                return 0
+
+        # get spoon
+        if self.grabbing_spoon == False:
+            self.ui.textEdit_status.append(f"Grabbing spoon...\n")
+            self.get_spoon()
+            self.ui.textEdit_status.append(f"Grab spoon done.\n")
+
+        if self.first_start_time != 0:
+            if time.time() - self.first_start_time >= self.time_waffle_heat:
+                return 0
+
+        # check pan position
+        while self.pan_position != PAN_POS.HOME:
+            time.sleep(0.01)
+        self.wait_for_flip_done = False
+
+        # spoon peanuts              
+        self.spoon_single_peanuts()
+        self.wok.flip()
+
+        return 1
+
+    def drop_spoon(self):
+        try:
+            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
+            self.grabbing_spoon = False
+        except Exception as e:
+            self.ui.textEdit_status.append(f"drop_spoon error: {e}\n")
+
+    def pushButton_ServePeanuts_clicked(self):
+        try:
+            if self.ui.lineEdit_NumOfPeanuts.text():
+                new_order = order(int(self.ui.lineEdit_NumOfPeanuts.text()), 0)
+                self.tcp.received_orders.put(new_order)
+            else:
+                self.ui.textEdit_status.append(f"Num of Peanuts is empty.\n")      
+        except Exception as e:
+            self.ui.textEdit_status.append(f"Serve Peanuts error: {e}\n")    
+    #endregion
+
+    #region waffle related
+    def pushButton_Open1stLid_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/open_1st_lid.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"open_1st_lid error: {e}\n")
+
+    def pushButton_Open2ndLid_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/open_2nd_lid.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"open_2nd_lid error: {e}\n")
+
+    def pushButton_Grab1stBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"grab_1st_batter error: {e}\n")
+
+    def pushButton_Grab2ndBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"grab_2nd_batter error: {e}\n")
+
+    def pushButton_Pour1stBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"pour_1st_batter error: {e}\n")
+
+    def pushButton_Pour2ndBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/pour_2nd_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"pour_2nd_batter error: {e}\n")
+
+    def pushButton_Drop1stBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/drop_1st_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"drop_1st_batter error: {e}\n")    
+
+    def pushButton_Drop2ndBatter_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"drop_2nd_batter error: {e}\n")    
+
+    def pushButton_Close1stLid_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/close_1st_lid.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"close_1st_lid error: {e}\n")
+
+    def pushButton_Close2ndLid_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/close_2nd_lid.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"close_2nd_lid error: {e}\n")
+
+    def pushButton_GrabFork_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/grab_fork.csv")
+            self.grabbing_fork = True
+        except Exception as e:
+            self.ui.textEdit_status.append(f"grab_fork error: {e}\n")
+
+    def pushButton_DropFork_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/drop_fork.csv")
+            self.grabbing_fork = False
+        except Exception as e:
+            self.ui.textEdit_status.append(f"drop_fork error: {e}\n")
+
+    def pushButton_Get1stWaffle_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"get_1st_waffle error: {e}\n")
+
+    def pushButton_Get2ndWaffle_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"get_2nd_waffle error: {e}\n")
+
+    def pushButton_DropWaffle_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/drop_waffle.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"drop_waffle error: {e}\n")
+
+    def pushButton_GoToDefault_clicked(self):
+        try:
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
+
+            self.run_trajectory("ROS/trajectories/go_to_default.csv")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"go_to_default error: {e}\n")
+
+    def pushButton_ServeWaffle_clicked(self):
+        try:
+            if self.ui.lineEdit_NumOfWaffle.text():
+                new_order = order(0, int(self.ui.lineEdit_NumOfWaffle.text()))
+                self.tcp.received_orders.put(new_order)
+            else:
+                self.ui.textEdit_status.append(f"Num of Waffle is empty.\n")      
+        except Exception as e:
+            self.ui.textEdit_status.append(f"Serve Waffle error: {e}\n")
+
+    def cook_1st_stove(self):
+        self.pushButton_Grab1stBatter_clicked()
+        self.pushButton_Pour1stBatter_clicked()
+        self.pushButton_Drop1stBatter_clicked()
+        self.pushButton_Close1stLid_clicked()
+
+    def cook_2nd_stove(self):
+        self.pushButton_Grab2ndBatter_clicked()
+        self.pushButton_Pour2ndBatter_clicked()
+        self.pushButton_Drop2ndBatter_clicked
+        self.pushButton_Close2ndLid_clicked()
+
+    def serve_1st_stove(self):
+        self.pushButton_Open1stLid_clicked()
+        self.pushButton_GrabFork_clicked()
+        self.pushButton_Get1stWaffle_clicked()
+        self.pushButton_DropWaffle_clicked()
+        self.pushButton_DropFork_clicked()
+
+    def serve_2nd_stove(self):
+        self.pushButton_Open2ndLid_clicked()
+        self.pushButton_GrabFork_clicked()
+        self.pushButton_Get2ndWaffle_clicked()
+        self.pushButton_DropWaffle_clicked()
+        self.pushButton_DropFork_clicked()
+
+    #endregion
+
+    #region serving orders
+    def serve_orders(self):
+        while self.serving_orders == True:
+
+            if self.tcp.received_orders.empty() == True:
+                continue
+
+            try:
+                order = self.tcp.received_orders.get()
+                if order.waffle_num <= self.num_left_waffle:
+                    self.num_left_waffle -= order.waffle_num
+                    order.waffle_num = 0
+                else:
+                    order.waffle_num -= self.num_left_waffle
+                    self.num_left_waffle = 0
+
+                self.left_seconds = self.get_order_time(order)
+                self.ui.textEdit_status.append(f"left_seconds: {self.left_seconds}\n")
+
+                if self.serving_orders == False:
+                    break
+
+                if order.waffle_num > 0 and order.peanuts_num > 0:
+                    self.ui.textEdit_status.append(f"Serving both.\n")
+                    self.serve_both(order.waffle_num, order.peanuts_num)
+
+                elif order.peanuts_num > 0:
+                    self.ui.textEdit_status.append(f"Serving peanuts only.\n")
+                    self.serve_peanuts(order.peanuts_num)
+
+                elif order.waffle_num > 0:
+                    self.ui.textEdit_status.append(f"Serving waffle only.\n")
+                    self.serve_waffle(order.waffle_num)
+
+                self.left_seconds = 0
+                self.tcp.send_end()
+                self.ui.textEdit_status.append(f"Serve order done: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
+                self.ui.textEdit_status.append(f"Number of left waffle: {self.num_left_waffle}.\n")
+            except Exception as e:
+                self.ui.textEdit_status.append(f"serve_orders error: {e}\n")
+
+    def serve_both(self, num_waffle, num_peanuts):
+        # cook waffle first
+        if num_waffle <= self.num_left_waffle:
+            self.num_left_waffle -= num_waffle
+            return
+        
+        if num_waffle - self.num_left_waffle > 4:
+            use_2nd_stove = True
+        else:
+            use_2nd_stove = False
+
+        self.wok.AC(1)
+        
+        self.cook_1st_stove()
+        self.first_start_time = time.time()
+
+        heating_time = 10
+        if use_2nd_stove == True:
+            self.cook_2nd_stove()
+            second_start_time = time.time()
+
+        # then spoon peanuts
+        count = 1
+        while count <= num_peanuts:
+            done = self.spoon_peanuts()
+            if done == 1:
+                count += 1
+            else:
+                break
+
+        # do waffle first if waffle is ready
+        if use_2nd_stove == False:
+            self.wok.AC(0)
+
+        if self.grabbing_spoon == True:
+            self.drop_spoon()
+
+        self.serve_1st_stove()
+
+        if use_2nd_stove == True:
+            while time.time() - second_start_time < heating_time:
+                time.sleep(0.01)
+            self.wok.AC(0)       
+
+        if use_2nd_stove == True:
+            self.serve_2nd_stove()
+
+        if use_2nd_stove == False:
+            self.num_left_waffle = self.num_left_waffle + 4 - num_waffle
+        else:
+            self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
+
+        self.first_start_time = 0
+
+        # back to peanuts when waffle is done
+        while count <= num_peanuts:
+            self.spoon_peanuts()
+            count += 1
+
+    def serve_waffle(self, num_waffle):
+        if num_waffle <= self.num_left_waffle:
+            self.num_left_waffle -= num_waffle
+            return
+        
+        if num_waffle - self.num_left_waffle > 4:
+            use_2nd_stove = True
+        else:
+            use_2nd_stove = False
+
+        self.wok.AC(1)
+        
+        self.cook_1st_stove()
+        first_start_time = time.time()
+
+        if use_2nd_stove == True:
+            self.cook_2nd_stove()
+            second_start_time = time.time()
+
+        while time.time() - first_start_time < self.time_waffle_heat:
+            time.sleep(0.01)
+        
+        if use_2nd_stove == False:
+            self.wok.AC(0)
+
+        self.serve_1st_stove()
+
+        if use_2nd_stove == True:
+            while time.time() - second_start_time < self.time_waffle_heat:
+                time.sleep(0.01)
+            self.wok.AC(0)       
+
+        if use_2nd_stove == True:
+            self.serve_2nd_stove()
+
+        if use_2nd_stove == False:
+            self.num_left_waffle = self.num_left_waffle + 4 - num_waffle
+        else:
+            self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
+
+    def serve_peanuts(self, num_peanuts):
+        try:
+            count = 1
+            while count <= num_peanuts:                
+                self.spoon_peanuts()
+                self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")             
+                count += 1         
+            
+            self.ui.textEdit_status.append(f"Serve Peanuts done.\n")
+        except Exception as e:
+            self.ui.textEdit_status.append(f"Spoon peanuts error: {e}.\n") 
+    #endregion
 
     def run_trajectory(self, filename):
         try:
@@ -285,341 +795,23 @@ class main_window_ctrl(QMainWindow):
                     self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
 
         except Exception as e:
-            raise e
+            raise e   
+    
+    def get_order_time(self, order):
+        seconds = 0
 
-    def press_button(self):
-        try:
-            self.run_trajectory("ROS/trajectories/press_button.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"press_button error: {e}\n")
+        if order.peanuts_num > 0:
+            seconds += self.time_peanut_spoon * order.peanuts_num
 
-    def get_spoon(self):
-        try:
-            # status_peanuts = self.check_peanuts()
-            # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
-            # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
-            #     return
-
-            self.run_trajectory("ROS/trajectories/get_spoon.csv")
-            self.grabbing_spoon = True
-        except Exception as e:
-            self.ui.textEdit_status.append(f"get_spoon error: {e}\n")
-
-    def pushButton_SpoonPeanuts_clicked(self):
-        try:
-            self.check_pan_pos(PAN_POS.HOME)
-            peanuts_status = self.check_peanuts()
-            if peanuts_status == 'sufficient':
-                self.spoon_single_peanuts()
+        if order.waffle_num > self.num_left_waffle:
+            if order.waffle_num - self.num_left_waffle <= 4:
+                seconds += self.time_waffle_pour + self.time_waffle_heat + self.time_waffle_serve
             else:
-                self.ui.textEdit_status.append(f"spoon_peanuts insufficient.")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"spoon_peanuts error: {e}\n")
+                seconds += self.time_waffle_pour + self.time_waffle_heat + self.time_waffle_serve + self.time_waffle_2nd_stove
 
-    def spoon_single_peanuts(self):
-        try:
-            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv")
-        except Exception as e:
-            raise e
+        return seconds
 
-    def spoon_peanuts(self):
-        # check amount of peanuts, dump peanuts if insufficient
-        wait_for_flip_done = False
-        status_peanuts = self.check_peanuts()
-        self.ui.textEdit_status.append(f"Check Peanuts Amount: {status_peanuts}\n")
-        while status_peanuts == 'operating':
-            time.sleep(0.01)
-            status_peanuts = self.check_peanuts()
-        while status_peanuts != 'sufficient':
-            self.ui.textEdit_status.append(f"Refilling Peanuts...\n")
-            #self.pushButton_GrabNDumpPeanuts_clicked(self)
-            status_peanuts = self.check_peanuts()
-            if status_peanuts == 'sufficient':
-                wait_for_flip_done = True   
-                self.ui.textEdit_status.append(f"Peanuts refilled.\n")
-                break
-            time.sleep(1)
-
-        # press button
-        if wait_for_flip_done == True:
-            if self.grabbing_spoon == True:
-                self.ui.textEdit_status.append(f"Dropping spoon...\n")
-                self.drop_spoon()
-                self.ui.textEdit_status.append(f"Spoon dropped.\n")
-            self.pan_position = PAN_POS.DOWN
-            self.ui.textEdit_status.append(f"Pressing button...\n")
-            self.press_button()
-            self.ui.textEdit_status.append(f"Button pressed.\n")
-
-        # get spoon
-        if self.grabbing_spoon == False:
-            self.ui.textEdit_status.append(f"Grabbing spoon...\n")
-            self.get_spoon()
-            self.ui.textEdit_status.append(f"Grab spoon done.\n")
-
-        # check pan position
-        while self.pan_position != PAN_POS.HOME:
-            time.sleep(0.01)
-
-        # spoon peanuts              
-        self.spoon_single_peanuts()
-
-    def drop_spoon(self):
-        try:
-            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
-            self.grabbing_spoon = False
-        except Exception as e:
-            self.ui.textEdit_status.append(f"drop_spoon error: {e}\n")
-
-    def pushButton_ServePeanuts_clicked(self):
-        try:
-            if self.ui.lineEdit_NumOfPeanuts.text():
-                new_order = order(int(self.ui.lineEdit_NumOfPeanuts.text()), 0)
-                self.orders.put(new_order)
-            else:
-                self.ui.textEdit_status.append(f"Num of Peanuts is empty.\n")      
-        except Exception as e:
-            self.ui.textEdit_status.append(f"Serve Peanuts error: {e}\n")
-
-    def serve_peanuts(self, num_peanuts):
-        try:
-            count = 1
-            while num_peanuts > 0:                
-                self.spoon_peanuts()
-                self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")            
-                num_peanuts -= 1   
-                count += 1         
-            
-            self.ui.textEdit_status.append(f"Serve Peanuts done.\n")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"Spoon peanuts error: {e}.\n") 
-
-    def pushButton_GrabBatterNPour_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            data = {}
-            message = self.graspGenCommunication.send_data(data)
-            self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
-
-    def pushButton_OpenLeftLid_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/open_left_lid.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"open_left_lid error: {e}\n")
-
-    def pushButton_OpenRightLid_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/open_right_lid.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"open_right_lid error: {e}\n")
-
-    def pushButton_GrabLeftBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/grab_left_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"grab_left_batter error: {e}\n")
-
-    def pushButton_GrabRightBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/grab_right_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"grab_right_batter error: {e}\n")
-
-    def pushButton_PourLeftBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/pour_left_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"pour_left_batter error: {e}\n")
-
-    def pushButton_PourRightBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/pour_right_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"pour_right_batter error: {e}\n")
-
-    def pushButton_DropLeftBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/drop_left_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"drop_left_batter error: {e}\n")    
-
-    def pushButton_DropRightBatter_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/drop_right_batter.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"drop_right_batter error: {e}\n")    
-
-    def pushButton_CloseLeftLid_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/close_left_lid.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"close_left_lid error: {e}\n")
-
-    def pushButton_CloseRightLid_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/close_right_lid.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"close_right_lid error: {e}\n")
-
-    def pushButton_GrabFork_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/grab_fork.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"grab_fork error: {e}\n")
-
-    def pushButton_DropFork_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/drop_fork.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"drop_fork error: {e}\n")
-
-    def pushButton_GetLeftWaffle_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/get_left_waffle.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"get_left_waffle error: {e}\n")
-
-    def pushButton_GetRightWaffle_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/get_right_waffle.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"get_right_waffle error: {e}\n")
-
-    def pushButton_DropWaffle_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/drop_waffle.csv")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"drop_waffle error: {e}\n")
-
-    def pushButton_ServeWaffle_clicked(self):
-        try:
-            if self.ui.lineEdit_NumOfWaffle.text():
-                new_order = order(0, int(self.ui.lineEdit_NumOfWaffle.text()))
-                self.orders.put(new_order)
-            else:
-                self.ui.textEdit_status.append(f"Num of Waffle is empty.\n")      
-        except Exception as e:
-            self.ui.textEdit_status.append(f"Serve Waffle error: {e}\n")
-
-    def serve_waffle(self, num_waffle):
-        self.cooked_waffle = num_waffle
-        if num_waffle <= self.cooked_waffle:
-            self.cooked_waffle -= num_waffle
-            return
-        
-        if num_waffle - self.cooked_waffle > 4:
-            use_right_stove = True
-        else:
-            use_right_stove = False
-
-        self.pushButton_GrabLeftBatter_clicked()
-        self.pushButton_PourLeftBatter_clicked()
-        self.pushButton_DropLeftBatter_clicked
-        self.pushButton_CloseLeftLid_clicked()
-
-        if use_right_stove == True:
-            self.pushButton_GrabRightBatter_clicked()
-            self.pushButton_PourRightBatter_clicked()
-            self.pushButton_DropRightBatter_clicked
-            self.pushButton_CloseRightLid_clicked()
-
-        self.wok.AC(1)
-        time.sleep(10)
-        self.wok.AC(0)
-
-        self.pushButton_OpenLeftLid_clicked()
-
-        if use_right_stove == True:
-            self.pushButton_OpenRightLid_clicked()
-
-        self.pushButton_GrabFork_clicked()
-
-        self.pushButton_GetLeftWaffle_clicked()
-        self.pushButton_DropWaffle_clicked()
-
-        if use_right_stove == True:
-            self.pushButton_GetRightWaffle_clicked()
-            self.pushButton_DropWaffle_clicked()
-
-        if use_right_stove == False:
-            self.cooked_waffle = self.cooked_waffle + 4 - num_waffle
-        else:
-            self.cooked_waffle = self.cooked_waffle + 8 - num_waffle
-
-    def serve_orders(self):
-        while self.serving_orders == True:
-
-            if self.orders.empty() == True:
-                continue
-
-            try:
-                order = self.orders.get()
-
-                if self.serving_orders == False:
-                    break
-
-                if order.peanuts_num > 0:
-                    self.serve_peanuts(order.peanuts_num)
-
-                if self.serving_orders == False:
-                    break
-
-                if order.waffle_num > 0:
-                    self.serve_waffle(order.waffle_num)
-
-                self.ui.textEdit_status.append(f"Serve order done: {order.peanuts_num} + {order.waffle_num}.\n")
-            except Exception as e:
-                self.ui.textEdit_status.append(f"serve_orders error: {e}\n")
-
+    #region wok
     def pan_home(self):
         self.wok.home()
 
@@ -635,18 +827,50 @@ class main_window_ctrl(QMainWindow):
             self.wok.AC(1)
         else:
             self.wok.AC(0)
+    #endregion
 
     def closeEvent(self, event: QCloseEvent):
-        if self.cam:
-            self.cam.quit()
+        try:
+            if self.cam:
+                self.cam.quit()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"cam.quit error: {e}\n")
 
-        if self.graspGenCommunication:
-            self.GraspGenCommunication_destroy()
+        try:
+            if self.graspGenCommunication:
+                self.GraspGenCommunication_destroy()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"GraspGenCommunication_destroy error: {e}\n")
 
-        if self.rosCommunication:
-            self.ros_destroy()
+        try:
+            if self.rosCommunication:
+                self.ros_destroy()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"ros_destroy error: {e}\n")
+
+        try:
+            if self.tcp:
+                self.tcp.close()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"tcp.close error: {e}\n")
 
         self.serving_orders = False
-        self.thread_pan_position_check.join()
-        self.thread_processing_orders.join()       
+
+        try:
+            if self.thread_pan_position_check:
+                self.thread_pan_position_check.join()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"thread_pan_position_check join error: {e}\n")
+
+        try:
+            if self.thread_processing_orders:    
+                self.thread_processing_orders.join()    
+        except Exception as e:
+            self.ui.textEdit_status.append(f"thread_processing_orders join error: {e}\n")        
+
+        try:
+            if self.thread_counting_left_time:
+                self.thread_counting_left_time.join()  
+        except Exception as e:
+            self.ui.textEdit_status.append(f"thread_counting_left_time join error: {e}\n")  
 
