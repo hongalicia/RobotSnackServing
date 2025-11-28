@@ -66,12 +66,15 @@ class main_window_ctrl(QMainWindow):
         self.ui.pushButton_ServeWaffle.clicked.connect(self.pushButton_ServeWaffle_clicked)
         self.ui.pushButton_GoToDefault.clicked.connect(self.pushButton_GoToDefault_clicked)
 
+        self.ui.pushButton_ServeBoth.clicked.connect(self.pushButton_ServeBoth_clicked)
+
     def init(self):
         self.serving_orders = True
         self.wait_for_flip_done = False
         self.first_start_time = 0
         self.left_seconds = 0
         self.reheat = False
+        self.refill = False
 
         if 'self.PeanutNumClassifier' not in globals():
             try:
@@ -352,8 +355,8 @@ class main_window_ctrl(QMainWindow):
             status_peanuts = self.check_peanuts()
         while status_peanuts != 'sufficient':
             self.ui.textEdit_status.append(f"Refilling Peanuts...\n")
-            self.left_seconds += self.time_peanut_drop
-            #self.pushButton_GrabNDumpPeanuts_clicked(self)
+            self.left_seconds += self.time_peanut_heat + self.time_peanut_flip
+            self.pushButton_GrabNDumpPeanuts_clicked()
             status_peanuts = self.check_peanuts()
             if status_peanuts == 'sufficient':
                 self.refill = True   
@@ -375,6 +378,7 @@ class main_window_ctrl(QMainWindow):
             self.left_seconds += self.time_peanut_heat
             self.wait_for_flip_done = True
             self.ui.textEdit_status.append(f"Button pressed.\n")
+            self.refill = False
 
             if self.first_start_time != 0:
                 return 0
@@ -397,8 +401,14 @@ class main_window_ctrl(QMainWindow):
         self.wait_for_flip_done = False
 
         # spoon peanuts              
+        print("=====================spoon")
         self.spoon_single_peanuts()
+        
+        self.pan_position = PAN_POS.DOWN
         self.wok.flip()
+        print("=====================flip")
+        while self.pan_position != PAN_POS.HOME:
+            time.sleep(0.01)
 
         return 1
 
@@ -603,6 +613,24 @@ class main_window_ctrl(QMainWindow):
         self.pushButton_DropWaffle_clicked()
         self.pushButton_DropFork_clicked()
 
+    def pushButton_ServeBoth_clicked(self):
+        try:
+            if self.ui.lineEdit_NumOfWaffle.text():
+                num_waffle = int(self.ui.lineEdit_NumOfWaffle.text())
+            else:
+                self.ui.textEdit_status.append(f"Num of Waffle is empty.\n")   
+                return
+
+            if self.ui.lineEdit_NumOfPeanuts.text():
+                num_peanuts = int(self.ui.lineEdit_NumOfPeanuts.text())
+            else:
+                self.ui.textEdit_status.append(f"Num of Peanuts is empty.\n")  
+                return
+
+            new_order = order(num_peanuts, num_waffle)
+            self.tcp.received_orders.put(new_order)   
+        except Exception as e:
+            self.ui.textEdit_status.append(f"Serve Waffle error: {e}\n")
     #endregion
 
     #region serving orders
@@ -790,18 +818,18 @@ class main_window_ctrl(QMainWindow):
                 print("mode:", node.mode, "joint_value:", node.joint_value)
                 if node.mode == Mode.OPEN:
                     # self.rosCommunication.open_gripper() 
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 3.0})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 3.0})
                 elif node.mode == Mode.CLOSE:
                     # self.rosCommunication.close_gripper() 
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 1.5})
                 elif node.mode == Mode.HALF_OPEN:
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 1.5})
                 elif node.mode == Mode.CLOSE_TIGHT:
-                    self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 1.5})
                 elif node.mode == Mode.MOVE:
                     # self.rosCommunication.append_joints(node.joint_value, block=False)     
-                    self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
-
+                    response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
+                print(response)
         except Exception as e:
             raise e   
     

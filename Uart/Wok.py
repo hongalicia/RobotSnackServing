@@ -79,7 +79,7 @@ class Wok(threading.Thread):
 
 if __name__ == "__main__":
     wok = Wok()
-    wok.down()
+    wok.home()
     while True:
         pass
     # wok.flip()
