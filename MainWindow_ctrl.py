@@ -10,6 +10,8 @@ from ROS.trajectory_parser import *
 from ROS.ros_comm import *
 from Uart.Wok import *
 from TCP.TCP import *
+from Thermal.thermal_TCP import *
+from CheckEmptyCup.cup_TCP import *
 
 import cv2
 import json
@@ -70,11 +72,10 @@ class main_window_ctrl(QMainWindow):
 
     def init(self):
         self.serving_orders = True
-        self.wait_for_flip_done = False
-        self.first_start_time = 0
-        self.left_seconds = 0
-        self.reheat = False
-        self.refill = False
+        self.peanuts_wait_for_pan_home = False
+        self.waffle_first_stove_start_time = 0
+        self.current_order_left_seconds = 0
+        self.pressing_button_needed = False
 
         if 'self.PeanutNumClassifier' not in globals():
             try:
@@ -95,14 +96,7 @@ class main_window_ctrl(QMainWindow):
                 self.ros_init()
             except Exception as e:
                 self.ui.textEdit_status.append(f"ros_init error: {e}\n")
-                return
-            
-        if 'self.cam' not in globals():
-            try:
-                self.cam_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"cam_init error: {e}\n")
-                return        
+                return                     
 
         if 'self.wok' not in globals():
             try:
@@ -116,12 +110,33 @@ class main_window_ctrl(QMainWindow):
                 self.tcp_init()
             except Exception as e:
                 self.ui.textEdit_status.append(f"tcp_init error: {e}\n")
-                return         
+                return  
+
+        if 'self.tcp_thermal' not in globals():
+            try:
+                self.tcp_thermal_init()
+            except Exception as e:
+                self.ui.textEdit_status.append(f"tcp_thermal_init error: {e}\n")
+                return   
+
+        if 'self.tcp_check_empty_cup' not in globals():
+            try:
+                self.tcp_check_empty_cup_init()
+            except Exception as e:
+                self.ui.textEdit_status.append(f"tcp_check_empty_cup_init error: {e}\n")
+                return          
+
+        if 'self.cam' not in globals():
+            try:
+                self.cam_init()
+            except Exception as e:
+                self.ui.textEdit_status.append(f"cam_init error: {e}\n")
+                return   
 
         self.num_left_waffle = 0
         self.grabbing_spoon = False
         self.grabbing_fork = False
-        self.on_off = False          
+        self.waffle_machine_on_off = False          
 
         self.time_peanut_spoon = 20
         self.time_peanut_drop = 35
@@ -135,6 +150,8 @@ class main_window_ctrl(QMainWindow):
         self.time_waffle_serve = 30
         self.time_waffle_2nd_stove = 30
 
+        self.thermal_threshold = 40
+
     #region init
     def tcp_init(self):
         self.tcp = TcpClient("192.168.1.111", 9000)
@@ -144,6 +161,14 @@ class main_window_ctrl(QMainWindow):
 
         self.thread_counting_left_time = threading.Thread(target=self.count_left_time)
         self.thread_counting_left_time.start()
+
+    def tcp_thermal_init(self):
+        self.tcp_thermal = ThermalClient("192.168.1.111", 9000)
+        #self.tcp_thermal.connect()
+
+    def tcp_check_empty_cup_init(self):
+        self.tcp_check_empty_cup = CupClient("192.168.1.111", 9000)
+        #self.tcp_check_empty_cup.connect()
 
     def wok_init(self):
         self.wok = Wok()
@@ -194,9 +219,9 @@ class main_window_ctrl(QMainWindow):
         while self.serving_orders == True:
 
             #self.tcp.left_time(self.left_seconds // 60, self.left_seconds % 60)
-            self.ui.lineEdit_LeftTime.setText(str(self.left_seconds)) 
-            if self.left_seconds > 0:
-                self.left_seconds -= 1
+            self.ui.lineEdit_LeftTime.setText(str(self.current_order_left_seconds)) 
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds -= 1
 
             time.sleep(1)
 
@@ -241,13 +266,13 @@ class main_window_ctrl(QMainWindow):
     def pushButton_CheckPeanuts_clicked(self):
         try:
             # output = self.check_peanuts(save_image=True)
-            output = self.check_peanuts()
+            output = self.check_peanuts_amount()
             # output = self.check_peanuts('PeanutNumberClassification/operating-sub.png') only use when debugging
             self.ui.textEdit_status.append(f"check_peanuts output: {output}\n")
         except Exception as e:
             self.ui.textEdit_status.append(f"check_peanuts error: {e}\n")
 
-    def check_peanuts(self, image_path=None, save_image = False):       
+    def check_peanuts_amount(self, image_path=None, save_image = False):       
         try:
             self.check_pan_pos(PAN_POS.HOME)
 
@@ -342,51 +367,72 @@ class main_window_ctrl(QMainWindow):
             raise e
 
     def spoon_peanuts(self):
-        # check amount of peanuts, dump peanuts if insufficient
-        if self.wait_for_flip_done == True:
+        # check if reheat or flip is done
+        if self.peanuts_wait_for_pan_home == True:
             while self.pan_position != PAN_POS.HOME:
                 time.sleep(0.01)
-            self.wait_for_flip_done = False
+            self.peanuts_wait_for_pan_home = False
 
-        status_peanuts = self.check_peanuts()
-        self.ui.textEdit_status.append(f"Check Peanuts Amount: {status_peanuts}\n")
-        while status_peanuts == 'operating':
+        # check amount of peanuts, refill peanuts if insufficient
+        peanuts_amount = self.check_peanuts_amount()
+        self.ui.textEdit_status.append(f"Check Peanuts Amount: {peanuts_amount}\n")
+        while peanuts_amount == 'operating': 
             time.sleep(0.01)
-            status_peanuts = self.check_peanuts()
-        while status_peanuts != 'sufficient':
-            self.ui.textEdit_status.append(f"Refilling Peanuts...\n")
-            self.left_seconds += self.time_peanut_heat + self.time_peanut_flip
+            peanuts_amount = self.check_peanuts_amount()
+
+        while peanuts_amount != 'sufficient':      
+            # check if there's any empty cup     
+            while self.tcp_check_empty_cup.get_isEmpty() == True:
+                self.ui.textEdit_status.append(f"===============================\n")
+                self.ui.textEdit_status.append(f"=Please refill the peanut cup.=\n")
+                self.ui.textEdit_status.append(f"===============================\n")                
+                time.sleep(0.01)
+                self.current_order_left_seconds += 0.01
+
+            # no empty cup, run GraspGen
+            self.ui.textEdit_status.append(f"GraspGen Refilling Peanuts...\n")
+            self.current_order_left_seconds += self.time_peanut_heat + self.time_peanut_flip
             self.pushButton_GrabNDumpPeanuts_clicked()
-            status_peanuts = self.check_peanuts()
-            if status_peanuts == 'sufficient':
-                self.refill = True   
+
+            # check peanuts amount before spooning
+            peanuts_amount = self.check_peanuts_amount()
+            if peanuts_amount == 'sufficient':
+                self.pressing_button_needed = True   
                 self.ui.textEdit_status.append(f"Peanuts refilled.\n")
                 break
             time.sleep(1)
-            self.left_seconds += 1
+            self.current_order_left_seconds += 1
 
-        # press button
-        if self.refill == True:
+        # press button if needed
+        if self.pressing_button_needed == True:
             if self.grabbing_spoon == True:
                 self.ui.textEdit_status.append(f"Dropping spoon...\n")
                 self.drop_spoon()
-                self.left_seconds += self.time_peanut_drop_spoon
+                self.current_order_left_seconds += self.time_peanut_drop_spoon
                 self.ui.textEdit_status.append(f"Spoon dropped.\n")
+                
             self.pan_position = PAN_POS.DOWN
             self.ui.textEdit_status.append(f"Pressing button...\n")
             self.press_button()
-            self.left_seconds += self.time_peanut_heat
-            self.wait_for_flip_done = True
             self.ui.textEdit_status.append(f"Button pressed.\n")
-            self.refill = False
 
-            if self.first_start_time != 0:
+            self.current_order_left_seconds += self.time_peanut_heat
+            self.peanuts_wait_for_pan_home = True            
+            self.pressing_button_needed = False
+
+            # get back to waffle is waffle is cooking
+            if self.waffle_first_stove_start_time != 0:
                 return 0
-            
-        elif self.reheat == True:
+        
+        # reheat peanuts if needed
+        elif self.tcp_thermal.get_cur_temp() < self.thermal_threshold:
             self.ui.textEdit_status.append(f"Re-heating.\n")
-            self.wait_for_flip_done = True
-            if self.first_start_time != 0:
+            self.wok.heat()
+            self.current_order_left_seconds += self.time_peanut_heat
+            self.peanuts_wait_for_pan_home = True
+
+            # get back to waffle is waffle is cooking
+            if self.waffle_first_stove_start_time != 0:
                 return 0
 
         # get spoon
@@ -398,7 +444,7 @@ class main_window_ctrl(QMainWindow):
         # check pan position
         while self.pan_position != PAN_POS.HOME:
             time.sleep(0.01)
-        self.wait_for_flip_done = False
+        self.peanuts_wait_for_pan_home = False
 
         # spoon peanuts              
         print("=====================spoon")
@@ -651,95 +697,95 @@ class main_window_ctrl(QMainWindow):
                     order.waffle_num -= self.num_left_waffle
                     self.num_left_waffle = 0
 
-                self.left_seconds = self.get_order_time(order)
+                self.current_order_left_seconds = self.get_order_time(order)
                 #self.tcp.send_time(self.left_seconds // 60, self.left_seconds % 60)
 
                 if self.serving_orders == False:
                     break
 
-                if order.waffle_num > 0 and order.peanuts_num > 0:
-                    self.ui.textEdit_status.append(f"Serving both.\n")
-                    self.serve_both(order.waffle_num, order.peanuts_num)
+                self.serve_both(order.waffle_num, order.peanuts_num)
 
-                elif order.peanuts_num > 0:
-                    self.ui.textEdit_status.append(f"Serving peanuts only.\n")
-                    self.serve_peanuts(order.peanuts_num)
-
-                elif order.waffle_num > 0:
-                    self.ui.textEdit_status.append(f"Serving waffle only.\n")
-                    self.serve_waffle(order.waffle_num)
-
-                self.ui.textEdit_status.append(f"Serve order done: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
+                self.ui.textEdit_status.append(f"Serve order done.\n")
                 self.ui.textEdit_status.append(f"Number of left waffle: {self.num_left_waffle}.\n")
-                self.left_seconds = 0                 
+                self.current_order_left_seconds = 0                 
                 #self.tcp.send_end()                
             except Exception as e:
                 self.ui.textEdit_status.append(f"serve_orders error: {e}\n")
 
     def serve_both(self, num_waffle, num_peanuts):
-        # cook waffle first
+        # cook waffle first if needed
+        cook_waffle = False
         if num_waffle <= self.num_left_waffle:
             self.num_left_waffle -= num_waffle
-            return
-        
-        if num_waffle - self.num_left_waffle > 4:
-            use_2nd_stove = True
         else:
-            use_2nd_stove = False
+            cook_waffle = True
 
-        self.wok.AC(1)
-        
-        self.cook_1st_stove()
-        self.first_start_time = time.time()
+        if cook_waffle == True:
+            self.ui.textEdit_status.append(f"Cooking waffle...\n") 
+            if num_waffle - self.num_left_waffle > 4:
+                use_2nd_stove = True                
+            else:
+                use_2nd_stove = False                
 
-        heating_time = 10
-        if use_2nd_stove == True:
-            self.cook_2nd_stove()
-            second_start_time = time.time()
+            # turn on waffle machine
+            self.wok.AC(1)
+            
+            self.ui.textEdit_status.append(f"Use 1st stove.\n")
+            self.cook_1st_stove()
+            self.waffle_first_stove_start_time = time.time()
+
+            if use_2nd_stove == True:
+                self.ui.textEdit_status.append(f"Use 2nd stove.\n")
+                self.cook_2nd_stove()
+                second_start_time = time.time()
 
         # then spoon peanuts
-        count = 1
-        while count <= num_peanuts:
-            done = self.spoon_peanuts()
-            if done == 1:
-                self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")
-                count += 1                
-            else:
-                break
+        peanuts_spooned_count = 1
+        if num_peanuts > 0:            
+            while peanuts_spooned_count <= num_peanuts:
+                done = self.spoon_peanuts()
+                if done == 1:
+                    self.ui.textEdit_status.append(f"Spoon peanuts: {peanuts_spooned_count}.\n")
+                    peanuts_spooned_count += 1                
+                else: # if peanuts is reprocessing or reheating, back to waffle first
+                    break
 
-            # check if waffle is ready before next spoon
-            if time.time() - self.first_start_time >= heating_time:
-                break
+                # check if waffle is ready before next spoon
+                if cook_waffle == True and time.time() - self.waffle_first_stove_start_time >= self.time_waffle_heat:
+                    break
 
-        # do waffle first if waffle is ready
-        if use_2nd_stove == False:
-            self.wok.AC(0)
-
-        if self.grabbing_spoon == True:
-            self.drop_spoon()
-
-        self.serve_1st_stove()
-
-        if use_2nd_stove == True:
-            while time.time() - second_start_time < heating_time:
+        if cook_waffle == True:
+            # do waffle first if waffle is ready
+            while time.time() - self.waffle_first_stove_start_time < self.time_waffle_heat:
                 time.sleep(0.01)
-            self.wok.AC(0)       
 
-        if use_2nd_stove == True:
-            self.serve_2nd_stove()
+            # turn off waffle machine if 2nd stove is not in use
+            if use_2nd_stove == False:
+                self.wok.AC(0)
 
-        if use_2nd_stove == False:
-            self.num_left_waffle = self.num_left_waffle + 4 - num_waffle
-        else:
-            self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
+            if self.grabbing_spoon == True:
+                self.drop_spoon()
 
-        self.first_start_time = 0
+            self.ui.textEdit_status.append(f"Serving first stove...\n")
+            self.serve_1st_stove()
+
+            if use_2nd_stove == True:
+                while time.time() - second_start_time < self.time_waffle_heat:
+                    time.sleep(0.01)
+                self.wok.AC(0)       
+                self.ui.textEdit_status.append(f"Serving first stove...\n")
+                self.serve_2nd_stove()
+                self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
+            else:
+                self.num_left_waffle = self.num_left_waffle + 4 - num_waffle                
+
+            self.waffle_first_stove_start_time = 0
 
         # back to peanuts when waffle is done
-        while count <= num_peanuts:
+        while peanuts_spooned_count <= num_peanuts:
             self.spoon_peanuts()
-            self.ui.textEdit_status.append(f"Spoon peanuts: {count}.\n")
-            count += 1
+            self.ui.textEdit_status.append(f"Spoon peanuts: {peanuts_spooned_count}.\n")
+            peanuts_spooned_count += 1
 
     def serve_waffle(self, num_waffle):
         if num_waffle <= self.num_left_waffle:
@@ -858,8 +904,8 @@ class main_window_ctrl(QMainWindow):
         self.wok.flip()
 
     def AC(self):
-        self.on_off = not self.on_off
-        if self.on_off == True:
+        self.waffle_machine_on_off = not self.waffle_machine_on_off
+        if self.waffle_machine_on_off == True:
             self.wok.AC(1)
         else:
             self.wok.AC(0)
@@ -889,6 +935,18 @@ class main_window_ctrl(QMainWindow):
                 self.tcp.close()
         except Exception as e:
             self.ui.textEdit_status.append(f"tcp.close error: {e}\n")
+
+        try:
+            if self.tcp_thermal:
+                self.tcp_thermal.close()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"tcp_thermal.close error: {e}\n")
+
+        try:
+            if self.tcp_check_empty_cup:
+                self.tcp_check_empty_cup.close()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"tcp_check_empty_cup.close error: {e}\n")
 
         self.serving_orders = False
 
