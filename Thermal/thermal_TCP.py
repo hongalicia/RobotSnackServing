@@ -64,10 +64,10 @@ class ThermalClient:
                         send_data = b'\x88\x66\x6F' + left_min + left_sec + b'\x00\x00'
                         self.check_sum(send_data)
                     case 113:  # 'q'
-                        print("Received 'q' command.")
+                        #print("Received 'q' command.")
                         cur_temp = int(data[3])
                         self.cur_temp = cur_temp
-                        print(f"Current Max Temperature: {self.cur_temp}")
+                        #print(f"Current Max Temperature: {self.cur_temp}")
                         # send_data = b'\x88\x66\x71' + left_min + left_sec + b'\x00\x00'
                         # self.check_sum(send_data)
         else:

@@ -32,7 +32,7 @@ class CupClient:
         while self.running:
             try:
                 data = self.sock.recv(8)  # 固定接收 8 bytes
-                print("[RECV]", ' '.join(f"{b:02X}" for b in data))
+                #print("[RECV]", ' '.join(f"{b:02X}" for b in data))
                 if not data:
                     print("[INFO] Connection closed by server.")
                     break
@@ -64,14 +64,14 @@ class CupClient:
                         send_data = b'\x88\x66\x6F' + left_min + left_sec + b'\x00\x00'
                         self.check_sum(send_data)
                     case 97:  # 'a'
-                        print("Received 'a' command.")
+                        #print("Received 'a' command.")
                         match data[3]:
                             case 0:
                                 self.isEmpty = False
-                                print("NO CUP EMPTY")
+                                #print("NO CUP EMPTY")
                             case 1:
                                 self.isEmpty = True
-                                print("CUP IS EMPTY")
+                                #print("CUP IS EMPTY")
                         # send_data = b'\x88\x66\x71' + left_min + left_sec + b'\x00\x00'
                         # self.check_sum(send_data)
         else:
