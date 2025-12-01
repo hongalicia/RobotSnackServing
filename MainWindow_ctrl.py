@@ -339,6 +339,7 @@ class main_window_ctrl(QMainWindow):
             self.grabbing_spoon = True
         except Exception as e:
             self.ui.textEdit_status.append(f"get_spoon error: {e}\n")
+            raise e
 
     def pushButton_SpoonPeanuts_clicked(self):
         try:
@@ -701,6 +702,12 @@ class main_window_ctrl(QMainWindow):
                 self.ui.textEdit_status.append(f"Number of left waffle: {self.num_left_waffle}.\n")
                 self.current_order_left_seconds = 0                 
                 #self.tcp.send_end()                
+            except ValueError as e:
+                print(e)
+                self.ui.textEdit_status.append(f"Clearing all remaining tasks.\n")
+                while not self.tcp.received_orders.empty():
+                    self.tcp.received_orders.get()
+                continue
             except Exception as e:
                 self.ui.textEdit_status.append(f"serve_orders error: {e}\n")
 

@@ -11,7 +11,11 @@ class ROSCommunication:
     def send_data(self, data):
         try:
             self.sender.send_data(data)
-            return self.receiever.capture_data()
+            response = self.receiever.capture_data()
+            if response.get("message") == "Success":
+                return response
+            else:
+                raise ValueError("ROS2 gripper server failed.")
         except Exception as e:
             raise e
 
