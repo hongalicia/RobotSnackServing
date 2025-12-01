@@ -47,9 +47,9 @@ class main_window_ctrl(QMainWindow):
         self.ui.pushButton_WokDown.clicked.connect(self.pan_down)
         self.ui.pushButton_WokFlip.clicked.connect(self.pan_flip)
         self.ui.pushButton_WokAC.clicked.connect(self.AC)
+        self.ui.pushButton_WokHeat.clicked.connect(self.pan_heat)
 
         # functions for waffle
-        self.ui.pushButton_GrabBatterNPour.clicked.connect(self.pushButton_GrabBatterNPour_clicked)
         self.ui.pushButton_Open1stLid.clicked.connect(self.pushButton_Open1stLid_clicked)
         self.ui.pushButton_Grab1stBatter.clicked.connect(self.pushButton_Grab1stBatter_clicked)
         self.ui.pushButton_Pour1stBatter.clicked.connect(self.pushButton_Pour1stBatter_clicked)
@@ -69,9 +69,11 @@ class main_window_ctrl(QMainWindow):
         self.ui.pushButton_GoToDefault.clicked.connect(self.pushButton_GoToDefault_clicked)
 
         self.ui.pushButton_ServeBoth.clicked.connect(self.pushButton_ServeBoth_clicked)
+        self.ui.pushButton_Break.clicked.connect(self.break_serve_process)
 
     def init(self):
         self.serving_orders = True
+        self.serve_break = False
         self.peanuts_wait_for_pan_home = False
         self.waffle_first_stove_start_time = 0
         self.current_order_left_seconds = 0
@@ -316,17 +318,6 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
          except Exception as e:
             self.ui.textEdit_status.append(f"pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
-
-    def pushButton_GrabBatterNPour_clicked(self):
-        try:
-            if self.grabbing_spoon == True:
-                self.drop_spoon()
-
-            data = {}
-            message = self.graspGenCommunication.send_data(data)
-            self.ui.textEdit_status.append(f"graspGenCommunication return message: {message}\n")
-        except Exception as e:
-            self.ui.textEdit_status.append(f"pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
     #endregion
 
     #region peanuts related
@@ -426,6 +417,7 @@ class main_window_ctrl(QMainWindow):
         
         # reheat peanuts if needed
         elif self.tcp_thermal.get_cur_temp() < self.thermal_threshold:
+            self.pan_position = PAN_POS.DOWN
             self.ui.textEdit_status.append(f"Re-heating.\n")
             self.wok.heat()
             self.current_order_left_seconds += self.time_peanut_heat
@@ -838,6 +830,13 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"Serve Peanuts done.\n")
         except Exception as e:
             self.ui.textEdit_status.append(f"Spoon peanuts error: {e}.\n") 
+    
+    def break_serve_process(self):
+        self.serve_break = not self.serve_break
+        if self.serve_break == True:
+            self.ui.pushButton_Break.setText("Reset Break")
+        else:
+            self.ui.pushButton_Break.setText("Break")
     #endregion
 
     def run_trajectory(self, filename):
@@ -902,6 +901,9 @@ class main_window_ctrl(QMainWindow):
 
     def pan_flip(self):
         self.wok.flip()
+    
+    def pan_heat(self):
+        self.wok.heat()
 
     def AC(self):
         self.waffle_machine_on_off = not self.waffle_machine_on_off
