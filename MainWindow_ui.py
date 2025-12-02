@@ -343,6 +343,12 @@ class Ui_MainWindow(object):
         self.lineEdit_WaitForWaffleTime = QtWidgets.QLineEdit(self.groupBox_parameters_2)
         self.lineEdit_WaitForWaffleTime.setGeometry(QtCore.QRect(200, 420, 100, 40))
         self.lineEdit_WaitForWaffleTime.setObjectName("lineEdit_WaitForWaffleTime")
+        self.lineEdit_WaitForWafflePourTime = QtWidgets.QLineEdit(self.groupBox_parameters_2)
+        self.lineEdit_WaitForWafflePourTime.setGeometry(QtCore.QRect(510, 420, 100, 40))
+        self.lineEdit_WaitForWafflePourTime.setObjectName("lineEdit_WaitForWafflePourTime")
+        self.label_31 = QtWidgets.QLabel(self.groupBox_parameters_2)
+        self.label_31.setGeometry(QtCore.QRect(320, 430, 191, 21))
+        self.label_31.setObjectName("label_31")
         self.pushButton_SaveParameters = QtWidgets.QPushButton(self.groupBox_functions)
         self.pushButton_SaveParameters.setGeometry(QtCore.QRect(1010, 930, 180, 40))
         self.pushButton_SaveParameters.setObjectName("pushButton_SaveParameters")
@@ -461,6 +467,8 @@ class Ui_MainWindow(object):
         self.lineEdit_Open1stLidTime.setText(_translate("MainWindow", "0"))
         self.label_30.setText(_translate("MainWindow", "Wait for Waffle Done:"))
         self.lineEdit_WaitForWaffleTime.setText(_translate("MainWindow", "5"))
+        self.lineEdit_WaitForWafflePourTime.setText(_translate("MainWindow", "5"))
+        self.label_31.setText(_translate("MainWindow", "Wait for Waffle Pour:"))
         self.pushButton_SaveParameters.setText(_translate("MainWindow", "Save Parameters"))
 
 

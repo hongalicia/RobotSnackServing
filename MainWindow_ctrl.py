@@ -594,6 +594,10 @@ class main_window_ctrl(QMainWindow):
         wait_time = (int)(self.ui.lineEdit_WaitForWaffleTime.text())
         time.sleep(wait_time)
 
+    def wait_for_waffle_pour(self):
+        wait_time = (int)(self.ui.lineEdit_WaitForWafflePourTime.text())
+        time.sleep(wait_time)
+
     def pushButton_DropFork_clicked(self):
         try:
             if self.grabbing_spoon == True:
@@ -659,7 +663,8 @@ class main_window_ctrl(QMainWindow):
     def cook_2nd_stove(self):
         self.pushButton_Grab2ndBatter_clicked()
         self.pushButton_Pour2ndBatter_clicked()
-        self.pushButton_Drop2ndBatter_clicked
+        self.wait_for_waffle_pour()
+        self.pushButton_Drop2ndBatter_clicked()
         self.pushButton_Close2ndLid_clicked()
 
     def serve_1st_stove(self):
@@ -1009,6 +1014,7 @@ class main_window_ctrl(QMainWindow):
             self.ui.lineEdit_DropWaffleTime.setText(str(parameters["DropWaffleTime"]))
             self.ui.lineEdit_WaffleHeatingTime.setText(str(parameters["WaffleHeatingTime"]))
             self.ui.lineEdit_WaitForWaffleTime.setText(str(parameters["WaitForWaffleTime"]))
+            self.ui.lineEdit_WaitForWafflePourTime.setText(str(parameters["WaitForWafflePourTime"]))
             file.close()
         except Exception as e:
             raise e
@@ -1061,7 +1067,8 @@ class main_window_ctrl(QMainWindow):
                 "Get2ndWaffleTime": (int)(self.ui.lineEdit_Get2ndWaffleTime.text()),
                 "DropWaffleTime": (int)(self.ui.lineEdit_DropWaffleTime.text()),
                 "WaffleHeatingTime": (int)(self.ui.lineEdit_WaffleHeatingTime.text()),
-                "WaitForWaffleTime": (int)(self.ui.lineEdit_WaitForWaffleTime.text())
+                "WaitForWaffleTime": (int)(self.ui.lineEdit_WaitForWaffleTime.text()),
+                "WaitForWafflePourTime": (int)(self.ui.lineEdit_WaitForWafflePourTime.text())
             }
 
             with open('parameters.json', 'w') as file:
