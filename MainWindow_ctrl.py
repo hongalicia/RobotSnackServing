@@ -88,6 +88,15 @@ class main_window_ctrl(QMainWindow):
             self.waffle_first_stove_start_time = 0
             self.current_order_left_seconds = 0
             self.pressing_button_needed = False
+            
+            self.num_left_waffle = 0
+            self.grabbing_spoon = False
+            self.grabbing_fork = False
+            self.waffle_machine_on_off = False          
+
+            self.time_peanut_heat = (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
+            self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
+            self.thermal_threshold = (int)(self.ui.lineEdit_ThermalThreshold.text())
 
             if 'self.PeanutNumClassifier' not in globals():
                 try:
@@ -144,15 +153,7 @@ class main_window_ctrl(QMainWindow):
                 except Exception as e:
                     self.ui.textEdit_status.append(f"[ERROR]cam_init error: {e}\n")
                     return   
-
-            self.num_left_waffle = 0
-            self.grabbing_spoon = False
-            self.grabbing_fork = False
-            self.waffle_machine_on_off = False          
-
-            self.time_peanut_heat = (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
-            self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
-            self.thermal_threshold = (int)(self.ui.lineEdit_ThermalThreshold.text())
+                            
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]init error: {e}\n")
 
