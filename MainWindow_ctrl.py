@@ -363,7 +363,7 @@ class main_window_ctrl(QMainWindow):
 
     def spoon_single_peanuts(self):
         try:
-            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv")
+            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=50, acc=500)
         except Exception as e:
             raise e
 
@@ -495,7 +495,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/open_1st_lid.csv")
+            self.run_trajectory("ROS/trajectories/open_1st_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]open_1st_lid error: {e}\n")
 
@@ -504,7 +504,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/open_2nd_lid.csv")
+            self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]open_2nd_lid error: {e}\n")
 
@@ -513,7 +513,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv")
+            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_1st_batter error: {e}\n")
 
@@ -522,7 +522,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv")
+            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
 
@@ -531,7 +531,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv")
+            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_1st_batter error: {e}\n")
 
@@ -540,7 +540,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/pour_2nd_batter.csv")
+            self.run_trajectory("ROS/trajectories/pour_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_2nd_batter error: {e}\n")
 
@@ -549,7 +549,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/drop_1st_batter.csv")
+            self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_1st_batter error: {e}\n")    
 
@@ -558,7 +558,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv")
+            self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_2nd_batter error: {e}\n")    
 
@@ -567,7 +567,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/close_1st_lid.csv")
+            self.run_trajectory("ROS/trajectories/close_1st_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]close_1st_lid error: {e}\n")
 
@@ -576,7 +576,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/close_2nd_lid.csv")
+            self.run_trajectory("ROS/trajectories/close_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]close_2nd_lid error: {e}\n")
 
@@ -585,7 +585,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/grab_fork.csv")
+            self.run_trajectory("ROS/trajectories/grab_fork.csv", vel=100, acc=500)
             self.grabbing_fork = True
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_fork error: {e}\n")
@@ -603,7 +603,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/drop_fork.csv")
+            self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
             self.grabbing_fork = False
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_fork error: {e}\n")
@@ -613,7 +613,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv")
+            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_1st_waffle error: {e}\n")
 
@@ -622,7 +622,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv")
+            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_2nd_waffle error: {e}\n")
 
@@ -631,7 +631,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/drop_waffle.csv")
+            self.run_trajectory("ROS/trajectories/drop_waffle.csv", vel=40, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_waffle error: {e}\n")
 
@@ -640,7 +640,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/go_to_default.csv")
+            self.run_trajectory("ROS/trajectories/go_to_default.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]go_to_default error: {e}\n")
 
@@ -657,6 +657,7 @@ class main_window_ctrl(QMainWindow):
     def cook_1st_stove(self):
         self.pushButton_Grab1stBatter_clicked()
         self.pushButton_Pour1stBatter_clicked()
+        self.wait_for_waffle_pour()
         self.pushButton_Drop1stBatter_clicked()
         self.pushButton_Close1stLid_clicked()
 
@@ -872,10 +873,22 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]Spoon peanuts error: {e}.\n") 
     #endregion
-
-    def run_trajectory(self, filename):
+    
+        
+    def run_trajectory(self, filename, vel=40, acc=20):
         try:
             # load nodes
+            # waffle_type = False
+            # if filename in ["ROS/trajectories/close_1st_lid.csv","ROS/trajectories/close_2nd_lid.csv",
+            #                 "ROS/trajectories/drop_1st_batter.csv","ROS/trajectories/drop_2nd_batter.csv",
+            #                 "ROS/trajectories/drop_fork.csv","ROS/trajectories/drop_waffle.csv",
+            #                 "ROS/trajectories/get_1st_waffle.csv","ROS/trajectories/get_2nd_waffle.csv",
+            #                 "ROS/trajectories/grab_1st_batter.csv","ROS/trajectories/grab_2nd_batter.csv",
+            #                 "ROS/trajectories/grab_fork.csv",
+            #                 "ROS/trajectories/open_1st_lid.csv","ROS/trajectories/open_2nd_lid.csv",
+            #                 "ROS/trajectories/pour_1st_batter.csv","ROS/trajectories/pour_2nd_batter.csv",
+            #                 "ROS/trajectories/spoon_peanuts.csv"]:
+            #     waffle_type = True
             nodes = load_trajectory_from_csv(filename)
             parsed_nodes = []
             print("Number of nodes:", len(nodes))
@@ -906,12 +919,12 @@ class main_window_ctrl(QMainWindow):
                 elif node.mode == Mode.CLOSE_TIGHT:
                     response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 0.9})
                 elif node.mode == Mode.MOVE:
-                    # self.rosCommunication.append_joints(node.joint_value, block=False)     
-                    response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
+                    response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0, "custom_vel": vel, "custom_acc": acc})
                 print(response)
         except Exception as e:
             raise e   
     
+    #region get order time
     def get_order_time(self, order):
         seconds = 0
 
@@ -956,6 +969,7 @@ class main_window_ctrl(QMainWindow):
             seconds += (int)(self.ui.lineEdit_DropForkTime.text())
 
         return seconds
+    #endregion
 
     #region wok
     def pan_home(self):
