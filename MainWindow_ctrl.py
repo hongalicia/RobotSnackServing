@@ -448,18 +448,16 @@ class main_window_ctrl(QMainWindow):
             self.peanuts_wait_for_pan_home = False
 
             # spoon peanuts              
-            print("=====================spoon")
             self.ui.textEdit_status.append(f"[INFO]Spooning...\n")
             self.spoon_single_peanuts()
             
             self.pan_position = PAN_POS.DOWN
             self.ui.textEdit_status.append(f"[INFO]Flipping...\n")
             self.wok.flip()
-            print("=====================flip")
+
             self.ui.textEdit_status.append(f"[INFO]Wait for HOME.\n")
             while self.pan_position != PAN_POS.HOME:
                 time.sleep(0.01)
-            print("=====================flip done")
 
             return 1
         except Exception as e:
@@ -880,14 +878,14 @@ class main_window_ctrl(QMainWindow):
                 print("mode:", node.mode, "joint_value:", node.joint_value)
                 if node.mode == Mode.OPEN:
                     # self.rosCommunication.open_gripper() 
-                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 3.0})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "open", "wait_time": 1.5})
                 elif node.mode == Mode.CLOSE:
                     # self.rosCommunication.close_gripper() 
-                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close", "wait_time": 0.9})
                 elif node.mode == Mode.HALF_OPEN:
-                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "half_open", "wait_time": 0.5})
                 elif node.mode == Mode.CLOSE_TIGHT:
-                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 1.5})
+                    response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 0.9})
                 elif node.mode == Mode.MOVE:
                     # self.rosCommunication.append_joints(node.joint_value, block=False)     
                     response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0})
