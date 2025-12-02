@@ -77,87 +77,84 @@ class main_window_ctrl(QMainWindow):
 
         self.ui.pushButton_ServeBoth.clicked.connect(self.pushButton_ServeBoth_clicked)
 
+        self.ui.pushButton_SaveParameters.clicked.connect(self.pushButton_SaveParameters_clicked)
+
     def init(self):
-        self.serving_orders = True
-        self.peanuts_wait_for_pan_home = False
-        self.waffle_first_stove_start_time = 0
-        self.current_order_left_seconds = 0
-        self.pressing_button_needed = False
+        try:
+            self.load_parameters()
 
-        if 'self.PeanutNumClassifier' not in globals():
-            try:
-                self.PeanutNumClassification_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]PeanutNumClassification_init error: {e}\n")
-                return
+            self.serving_orders = True
+            self.peanuts_wait_for_pan_home = False
+            self.waffle_first_stove_start_time = 0
+            self.current_order_left_seconds = 0
+            self.pressing_button_needed = False
+
+            if 'self.PeanutNumClassifier' not in globals():
+                try:
+                    self.PeanutNumClassification_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]PeanutNumClassification_init error: {e}\n")
+                    return
+                
+            if 'self.GraspGenCommunication' not in globals():
+                try:
+                    self.GraspGenCommunication_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_init error: {e}\n")
+                    return
             
-        if 'self.GraspGenCommunication' not in globals():
-            try:
-                self.GraspGenCommunication_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_init error: {e}\n")
-                return
-        
-        if 'self.rosCommunication' not in globals():
-            try:
-                self.ros_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]ros_init error: {e}\n")
-                return                     
+            if 'self.rosCommunication' not in globals():
+                try:
+                    self.ros_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]ros_init error: {e}\n")
+                    return                     
 
-        if 'self.wok' not in globals():
-            try:
-                self.wok_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]wok_init error: {e}\n")
-                return  
+            if 'self.wok' not in globals():
+                try:
+                    self.wok_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]wok_init error: {e}\n")
+                    return  
 
-        if 'self.tcp' not in globals():
-            try:
-                self.tcp_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]tcp_init error: {e}\n")
-                return  
+            if 'self.tcp' not in globals():
+                try:
+                    self.tcp_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp_init error: {e}\n")
+                    return  
 
-        if 'self.tcp_thermal' not in globals():
-            try:
-                self.tcp_thermal_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
-                return   
+            if 'self.tcp_thermal' not in globals():
+                try:
+                    self.tcp_thermal_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
+                    return   
 
-        if 'self.tcp_check_empty_cup' not in globals():
-            try:
-                self.tcp_check_empty_cup_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
-                return          
+            if 'self.tcp_check_empty_cup' not in globals():
+                try:
+                    self.tcp_check_empty_cup_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
+                    return          
 
-        if 'self.cam' not in globals():
-            try:
-                self.cam_init()
-            except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]cam_init error: {e}\n")
-                return   
+            if 'self.cam' not in globals():
+                try:
+                    self.cam_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]cam_init error: {e}\n")
+                    return   
 
-        self.num_left_waffle = 0
-        self.grabbing_spoon = False
-        self.grabbing_fork = False
-        self.waffle_machine_on_off = False          
+            self.num_left_waffle = 0
+            self.grabbing_spoon = False
+            self.grabbing_fork = False
+            self.waffle_machine_on_off = False          
 
-        self.time_peanut_spoon = 20
-        self.time_peanut_drop = 35
-        self.time_peanut_heat = 150
-        self.time_peanut_flip = 10
-        self.time_peanut_grab_spoon = 10
-        self.time_peanut_drop_spoon = 5
-
-        self.time_waffle_pour = 30
-        self.time_waffle_heat = 120
-        self.time_waffle_serve = 30
-        self.time_waffle_2nd_stove = 30
-
-        self.thermal_threshold = 40
+            self.time_peanut_heat = (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
+            self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
+            self.thermal_threshold = (int)(self.ui.lineEdit_ThermalThreshold.text())
+        except Exception as e:
+            self.ui.textEdit_status.append(f"[ERROR]init error: {e}\n")
 
     #region init
     def tcp_init(self):
@@ -225,7 +222,7 @@ class main_window_ctrl(QMainWindow):
     def count_left_time(self):
         while self.serving_orders == True:
 
-            #self.tcp.left_time(self.left_seconds // 60, self.left_seconds % 60)
+            self.tcp.left_time(self.current_order_left_seconds // 60, self.current_order_left_seconds % 60)
             self.ui.lineEdit_LeftTime.setText(str(self.current_order_left_seconds)) 
             if self.current_order_left_seconds > 0:
                 self.current_order_left_seconds -= 1
@@ -330,6 +327,9 @@ class main_window_ctrl(QMainWindow):
         try:
             self.run_trajectory("ROS/trajectories/press_button1.csv")
             self.run_trajectory("ROS/trajectories/press_button2.csv")
+
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds += (int)(self.ui.lineEdit_PressButtonTime.text())
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]press_button error: {e}\n")
 
@@ -342,6 +342,9 @@ class main_window_ctrl(QMainWindow):
 
             self.run_trajectory("ROS/trajectories/get_spoon.csv")
             self.grabbing_spoon = True
+
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds += (int)(self.ui.lineEdit_GetSpoonTime.text())
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_spoon error: {e}\n")
             raise e
@@ -376,6 +379,7 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"[INFO]Check Peanuts Amount: {peanuts_amount}\n")
             while peanuts_amount == 'operating': 
                 time.sleep(0.01)
+                self.current_order_left_seconds += 0.01
                 peanuts_amount = self.check_peanuts_amount()
 
             while peanuts_amount != 'sufficient':      
@@ -387,7 +391,6 @@ class main_window_ctrl(QMainWindow):
 
                 # no empty cup, run GraspGen
                 self.ui.textEdit_status.append(f"[INFO]GraspGen Refilling Peanuts...\n")
-                self.current_order_left_seconds += self.time_peanut_heat + self.time_peanut_flip
                 self.pushButton_GrabNDumpPeanuts_clicked()
 
                 # check peanuts amount before spooning
@@ -404,7 +407,6 @@ class main_window_ctrl(QMainWindow):
                 if self.grabbing_spoon == True:
                     self.ui.textEdit_status.append(f"[INFO]Dropping spoon...\n")
                     self.drop_spoon()
-                    self.current_order_left_seconds += self.time_peanut_drop_spoon
                     self.ui.textEdit_status.append(f"[INFO]Spoon dropped.\n")
                     
                 self.pan_position = PAN_POS.DOWN
@@ -412,7 +414,6 @@ class main_window_ctrl(QMainWindow):
                 self.press_button()
                 self.ui.textEdit_status.append(f"[INFO]Button pressed.\n")
 
-                self.current_order_left_seconds += self.time_peanut_heat
                 self.peanuts_wait_for_pan_home = True            
                 self.pressing_button_needed = False
 
@@ -420,20 +421,23 @@ class main_window_ctrl(QMainWindow):
                 if self.waffle_first_stove_start_time != 0:
                     self.ui.textEdit_status.append(f"[INFO]Return to waffle.\n")
                     return 0
+                else:
+                    self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatFlipTime.text())
             
             # reheat peanuts if needed
             elif self.tcp_thermal.get_cur_temp() < self.thermal_threshold:
                 self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")
                 self.pan_position = PAN_POS.DOWN
                 self.ui.textEdit_status.append(f"[INFO]Re-heating.\n")
-                self.wok.heat()
-                self.current_order_left_seconds += self.time_peanut_heat
+                self.wok.heat()                
                 self.peanuts_wait_for_pan_home = True
 
                 # get back to waffle is waffle is cooking
                 if self.waffle_first_stove_start_time != 0:
                     self.ui.textEdit_status.append(f"[INFO]Return to waffle.\n")
                     return 0
+                else:
+                    self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
 
             # get spoon
             if self.grabbing_spoon == False:
@@ -453,7 +457,7 @@ class main_window_ctrl(QMainWindow):
             
             self.pan_position = PAN_POS.DOWN
             self.ui.textEdit_status.append(f"[INFO]Flipping...\n")
-            self.wok.flip()
+            self.pan_flip()            
 
             self.ui.textEdit_status.append(f"[INFO]Wait for HOME.\n")
             while self.pan_position != PAN_POS.HOME:
@@ -467,6 +471,9 @@ class main_window_ctrl(QMainWindow):
         try:
             self.run_trajectory("ROS/trajectories/drop_spoon.csv")
             self.grabbing_spoon = False
+
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds += (int)(self.ui.lineEdit_DropSpoonTime.text())
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_spoon error: {e}\n")
 
@@ -582,6 +589,10 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_fork error: {e}\n")
 
+    def wait_for_waffle_done(self):
+        wait_time = (int)(self.ui.lineEdit_WaitForWaffleTime.text())
+        time.sleep(wait_time)
+
     def pushButton_DropFork_clicked(self):
         try:
             if self.grabbing_spoon == True:
@@ -653,6 +664,7 @@ class main_window_ctrl(QMainWindow):
     def serve_1st_stove(self):
         self.pushButton_Open1stLid_clicked()
         self.pushButton_GrabFork_clicked()
+        self.wait_for_waffle_done()
         self.pushButton_Get1stWaffle_clicked()
         self.pushButton_DropWaffle_clicked()
         self.pushButton_DropFork_clicked()
@@ -660,6 +672,7 @@ class main_window_ctrl(QMainWindow):
     def serve_2nd_stove(self):
         self.pushButton_Open2ndLid_clicked()
         self.pushButton_GrabFork_clicked()
+        self.wait_for_waffle_done()
         self.pushButton_Get2ndWaffle_clicked()
         self.pushButton_DropWaffle_clicked()
         self.pushButton_DropFork_clicked()
@@ -896,14 +909,45 @@ class main_window_ctrl(QMainWindow):
     def get_order_time(self, order):
         seconds = 0
 
-        if order.peanuts_num > 0:
-            seconds += self.time_peanut_spoon * order.peanuts_num
-
         if order.waffle_num > self.num_left_waffle:
             if order.waffle_num - self.num_left_waffle <= 4:
-                seconds += self.time_waffle_pour + self.time_waffle_heat + self.time_waffle_serve
+                seconds = self.get_waffle_time(False)
             else:
-                seconds += self.time_waffle_pour + self.time_waffle_heat + self.time_waffle_serve + self.time_waffle_2nd_stove
+                seconds = self.get_waffle_time(True)
+            seconds += self.time_waffle_heat
+                
+        if order.peanuts_num > 0:
+            seconds += (int)(self.ui.lineEdit_SpoonPeanutsTime.text()) * order.peanuts_num
+
+        return seconds
+
+    def get_waffle_time(self, use_2nd_stove):
+        seconds = 0
+        
+        seconds += (int)(self.ui.lineEdit_Grab1stBatterTime.text())
+        seconds += (int)(self.ui.lineEdit_Pour1stBatterTime.text())
+        seconds += (int)(self.ui.lineEdit_Drop1stBatterTime.text())
+        seconds += (int)(self.ui.lineEdit_Close1stLidTime.text())
+
+        seconds += (int)(self.ui.lineEdit_Open1stLidTime.text())
+        seconds += (int)(self.ui.lineEdit_GrabForkTime.text())
+        seconds += (int)(self.ui.lineEdit_WaitForWaffleTime.text())
+        seconds += (int)(self.ui.lineEdit_Get1stWaffleTime.text())
+        seconds += (int)(self.ui.lineEdit_DropWaffleTime.text())
+        seconds += (int)(self.ui.lineEdit_DropForkTime.text())
+
+        if use_2nd_stove == True:
+            seconds += (int)(self.ui.lineEdit_Grab2ndBatterTime.text())
+            seconds += (int)(self.ui.lineEdit_Pour2ndBatterTime.text())
+            seconds += (int)(self.ui.lineEdit_Drop2ndBatterTime.text())
+            seconds += (int)(self.ui.lineEdit_Close2ndLidTime.text())
+
+            seconds += (int)(self.ui.lineEdit_Open2ndLidTime.text())
+            seconds += (int)(self.ui.lineEdit_GrabForkTime.text())
+            seconds += (int)(self.ui.lineEdit_WaitForWaffleTime.text())
+            seconds += (int)(self.ui.lineEdit_Get2ndWaffleTime.text())
+            seconds += (int)(self.ui.lineEdit_DropWaffleTime.text())
+            seconds += (int)(self.ui.lineEdit_DropForkTime.text())
 
         return seconds
 
@@ -915,10 +959,16 @@ class main_window_ctrl(QMainWindow):
         self.wok.down()
 
     def pan_flip(self):
-        self.wok.flip()
+        if self.current_order_left_seconds > 0:
+            self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsFlipTime.text())
+            
+        self.wok.flip()        
     
     def pan_heat(self):
-        self.wok.heat()
+        if self.current_order_left_seconds > 0:
+            self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
+            
+        self.wok.heat()        
 
     def AC(self):
         self.waffle_machine_on_off = not self.waffle_machine_on_off
@@ -929,6 +979,39 @@ class main_window_ctrl(QMainWindow):
     #endregion
 
     #region parameters
+    def load_parameters(self):
+        try:
+            file = open('parameters.json', 'r')
+            parameters = json.loads(file.read())
+            print(parameters)
+            self.ui.lineEdit_ThermalThreshold.setText(str(parameters["ThermalThreshold"]))
+            self.ui.lineEdit_PressButtonTime.setText(str(parameters["PressButtonTime"]))
+            self.ui.lineEdit_GetSpoonTime.setText(str(parameters["GetSpoonTime"]))
+            self.ui.lineEdit_SpoonPeanutsTime.setText(str(parameters["SpoonPeanutsTime"]))
+            self.ui.lineEdit_DropSpoonTime.setText(str(parameters["DropSpoonTime"]))
+            self.ui.lineEdit_PeanutsHeatFlipTime.setText(str(parameters["PeanutsHeatFlipTime"]))
+            self.ui.lineEdit_PeanutsHeatingTime.setText(str(parameters["PeanutsHeatingTime"]))
+            self.ui.lineEdit_PeanutsFlipTime.setText(str(parameters["PeanutsFlipTime"]))
+            self.ui.lineEdit_Open1stLidTime.setText(str(parameters["Open1stLidTime"]))
+            self.ui.lineEdit_Open2ndLidTime.setText(str(parameters["Open2ndLidTime"]))
+            self.ui.lineEdit_Grab1stBatterTime.setText(str(parameters["Grab1stBatterTime"]))
+            self.ui.lineEdit_Grab2ndBatterTime.setText(str(parameters["Grab2ndBatterTime"]))
+            self.ui.lineEdit_Pour1stBatterTime.setText(str(parameters["Pour1stBatterTime"]))
+            self.ui.lineEdit_Pour2ndBatterTime.setText(str(parameters["Pour2ndBatterTime"]))
+            self.ui.lineEdit_Drop1stBatterTime.setText(str(parameters["Drop1stBatterTime"]))
+            self.ui.lineEdit_Drop2ndBatterTime.setText(str(parameters["Drop2ndBatterTime"]))
+            self.ui.lineEdit_Close1stLidTime.setText(str(parameters["Close1stLidTime"]))
+            self.ui.lineEdit_Close2ndLidTime.setText(str(parameters["Close2ndLidTime"]))
+            self.ui.lineEdit_GrabForkTime.setText(str(parameters["GrabForkTime"]))
+            self.ui.lineEdit_Get1stWaffleTime.setText(str(parameters["Get1stWaffleTime"]))
+            self.ui.lineEdit_Get2ndWaffleTime.setText(str(parameters["Get2ndWaffleTime"]))
+            self.ui.lineEdit_DropWaffleTime.setText(str(parameters["DropWaffleTime"]))
+            self.ui.lineEdit_WaffleHeatingTime.setText(str(parameters["WaffleHeatingTime"]))
+            self.ui.lineEdit_WaitForWaffleTime.setText(str(parameters["WaitForWaffleTime"]))
+            file.close()
+        except Exception as e:
+            raise e
+        
     def pushButton_CheckTemperature_clicked(self):
         if self.tcp_thermal:
             self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")             
@@ -950,6 +1033,41 @@ class main_window_ctrl(QMainWindow):
             self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]lineEdit_WaffleHeatingTime_textChanged error: {e}.\n") 
+
+    def pushButton_SaveParameters_clicked(self):
+        try:            
+            parameters = {
+                "ThermalThreshold": (int)(self.ui.lineEdit_ThermalThreshold.text()),
+                "PressButtonTime": (int)(self.ui.lineEdit_PressButtonTime.text()),
+                "GetSpoonTime": (int)(self.ui.lineEdit_GetSpoonTime.text()),
+                "SpoonPeanutsTime": (int)(self.ui.lineEdit_SpoonPeanutsTime.text()),
+                "DropSpoonTime": (int)(self.ui.lineEdit_DropSpoonTime.text()),
+                "PeanutsHeatFlipTime": (int)(self.ui.lineEdit_PeanutsHeatFlipTime.text()),
+                "PeanutsHeatingTime": (int)(self.ui.lineEdit_PeanutsHeatingTime.text()),
+                "PeanutsFlipTime": (int)(self.ui.lineEdit_PeanutsFlipTime.text()),
+                "Open1stLidTime": (int)(self.ui.lineEdit_Open1stLidTime.text()),
+                "Open2ndLidTime": (int)(self.ui.lineEdit_Open2ndLidTime.text()),
+                "Grab1stBatterTime": (int)(self.ui.lineEdit_Grab1stBatterTime.text()),
+                "Grab2ndBatterTime": (int)(self.ui.lineEdit_Grab2ndBatterTime.text()),
+                "Pour1stBatterTime": (int)(self.ui.lineEdit_Pour1stBatterTime.text()),
+                "Pour2ndBatterTime": (int)(self.ui.lineEdit_Pour2ndBatterTime.text()),
+                "Drop1stBatterTime": (int)(self.ui.lineEdit_Drop1stBatterTime.text()),
+                "Drop2ndBatterTime": (int)(self.ui.lineEdit_Drop2ndBatterTime.text()),
+                "Close1stLidTime": (int)(self.ui.lineEdit_Close1stLidTime.text()),
+                "Close2ndLidTime": (int)(self.ui.lineEdit_Close2ndLidTime.text()),
+                "GrabForkTime": (int)(self.ui.lineEdit_GrabForkTime.text()),
+                "Get1stWaffleTime": (int)(self.ui.lineEdit_Get1stWaffleTime.text()),
+                "Get2ndWaffleTime": (int)(self.ui.lineEdit_Get2ndWaffleTime.text()),
+                "DropWaffleTime": (int)(self.ui.lineEdit_DropWaffleTime.text()),
+                "WaffleHeatingTime": (int)(self.ui.lineEdit_WaffleHeatingTime.text()),
+                "WaitForWaffleTime": (int)(self.ui.lineEdit_WaitForWaffleTime.text())
+            }
+
+            with open('parameters.json', 'w') as file:
+                json.dump(parameters, file, indent=4)
+
+        except Exception as e:
+            self.ui.textEdit_status.append(f"[ERROR]pushButton_SaveParameters_clicked error: {e}\n")
     #endregion
 
     def closeEvent(self, event: QCloseEvent):
