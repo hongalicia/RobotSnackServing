@@ -160,7 +160,7 @@ class main_window_ctrl(QMainWindow):
     #region init
     def tcp_init(self):
         self.tcp = TcpClient("192.168.1.111", 9000)
-        #self.tcp.connect()
+        # self.tcp.connect()
         self.thread_processing_orders = threading.Thread(target=self.serve_orders)
         self.thread_processing_orders.start() 
 
@@ -169,11 +169,14 @@ class main_window_ctrl(QMainWindow):
 
     def tcp_thermal_init(self):
         self.tcp_thermal = ThermalClient("192.168.1.133", 9000)
-        #self.tcp_thermal.connect()
+        self.tcp_thermal.connect()
+        print("tcp_thermal_init connect")
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
-        #self.tcp_check_empty_cup.connect()
+        print("tcp_check_empty_cup_init connect")
+        self.tcp_check_empty_cup.connect()
+        print("tcp_check_empty_cup_init stop")
 
     def wok_init(self):
         self.wok = Wok()
@@ -184,7 +187,7 @@ class main_window_ctrl(QMainWindow):
 
     def cam_init(self):
         self.cam = Camera()
-        self.cam.cam_init([2])
+        self.cam.cam_init([0])
 
     def PeanutNumClassification_init(self):
         try:
@@ -284,7 +287,7 @@ class main_window_ctrl(QMainWindow):
             if image_path is not None:
                 image = cv2.imread(image_path)
             else:
-                image = self.cam.capture_single(2)
+                image = self.cam.capture_single(0)
 
             file = open('PeanutNumberClassification/roi.json', 'r')
             self.roi = json.loads(file.read())["roi"] # x, y, w, h

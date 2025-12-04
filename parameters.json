@@ -1,5 +1,5 @@
 {
-    "ThermalThreshold": 0,
+    "ThermalThreshold": 37,
     "PressButtonTime": 0,
     "GetSpoonTime": 0,
     "SpoonPeanutsTime": 0,
