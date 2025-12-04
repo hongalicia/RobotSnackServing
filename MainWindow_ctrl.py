@@ -169,11 +169,11 @@ class main_window_ctrl(QMainWindow):
 
     def tcp_thermal_init(self):
         self.tcp_thermal = ThermalClient("192.168.1.133", 9000)
-        self.tcp_thermal.connect()
+        #self.tcp_thermal.connect()
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
-        self.tcp_check_empty_cup.connect()
+        #self.tcp_check_empty_cup.connect()
 
     def wok_init(self):
         self.wok = Wok()
@@ -723,7 +723,11 @@ class main_window_ctrl(QMainWindow):
                     self.num_left_waffle = 0
 
                 self.current_order_left_seconds = self.get_order_time(order)
-                #self.tcp.send_time(self.left_seconds // 60, self.left_seconds % 60)
+
+                try:
+                    self.tcp.send_time(self.current_order_left_seconds // 60, self.current_order_left_seconds % 60)
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp send_time failed.\n")
 
                 if self.serving_orders == False:
                     break
@@ -732,8 +736,13 @@ class main_window_ctrl(QMainWindow):
 
                 self.ui.textEdit_status.append(f"[INFO]Serve order done.\n")
                 self.ui.textEdit_status.append(f"[INFO]Number of left waffle: {self.num_left_waffle}.\n")
-                self.current_order_left_seconds = 0                 
-                #self.tcp.send_end()                
+                self.current_order_left_seconds = 0   
+
+                try:              
+                    self.tcp.send_end()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp send_end failed.\n")
+
             except ValueError as e:
                 print(e)
                 self.ui.textEdit_status.append(f"[ERROR]Clearing all remaining tasks.\n")
