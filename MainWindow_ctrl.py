@@ -160,7 +160,7 @@ class main_window_ctrl(QMainWindow):
     #region init
     def tcp_init(self):
         self.tcp = TcpClient("192.168.1.111", 9000)
-        # self.tcp.connect()
+        self.tcp.connect()
         self.thread_processing_orders = threading.Thread(target=self.serve_orders)
         self.thread_processing_orders.start() 
 
@@ -616,7 +616,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=100, acc=500)
+            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_1st_waffle error: {e}\n")
 
