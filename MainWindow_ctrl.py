@@ -175,7 +175,7 @@ class main_window_ctrl(QMainWindow):
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
         print("tcp_check_empty_cup_init connect")
-        self.tcp_check_empty_cup.connect()
+        # self.tcp_check_empty_cup.connect()
         print("tcp_check_empty_cup_init stop")
 
     def wok_init(self):
@@ -318,7 +318,8 @@ class main_window_ctrl(QMainWindow):
 
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds += 65
             data = {"actions": "Grasp_and_Dump"}
             message = self.graspGenCommunication.send_data(data)
             self.ui.textEdit_status.append(f"[INFO]graspGenCommunication return message: {message}\n")
@@ -525,7 +526,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
+            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
 
@@ -616,7 +617,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=50, acc=500)
+            self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=50, acc=500, blend=80)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_1st_waffle error: {e}\n")
 
@@ -625,7 +626,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=100, acc=500)
+            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=35, acc=500, blend=80)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_2nd_waffle error: {e}\n")
 
@@ -887,7 +888,7 @@ class main_window_ctrl(QMainWindow):
     #endregion
     
         
-    def run_trajectory(self, filename, vel=40, acc=20):
+    def run_trajectory(self, filename, vel=40, acc=20, blend=100):
         try:
             # load nodes
             # waffle_type = False
@@ -931,7 +932,7 @@ class main_window_ctrl(QMainWindow):
                 elif node.mode == Mode.CLOSE_TIGHT:
                     response = self.rosCommunication.send_data({"type": "gripper", "grip_type": "close_tight", "wait_time": 0.9})
                 elif node.mode == Mode.MOVE:
-                    response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0, "custom_vel": vel, "custom_acc": acc})
+                    response = self.rosCommunication.send_data({"type": "arm", "joints_values": node.joints_values, "wait_time": 0.0, "custom_vel": vel, "custom_acc": acc, "custom_blend": blend})
                 print(response)
         except Exception as e:
             raise e   

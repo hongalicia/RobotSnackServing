@@ -17,6 +17,7 @@ class Wok(threading.Thread):
         self.recv_thread.start()
 
     def run(self):
+        new_array = []
         while not self._stop_event.is_set():
             if UART.com_port().in_waiting > 0:
                 recv_data = UART.com_port().read(UART.com_port().in_waiting)
