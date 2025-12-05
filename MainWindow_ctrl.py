@@ -174,9 +174,9 @@ class main_window_ctrl(QMainWindow):
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
-        print("tcp_check_empty_cup_init connect")
+        print("tcp_check_empty_cup_init start")
         # self.tcp_check_empty_cup.connect()
-        print("tcp_check_empty_cup_init stop")
+        print("tcp_check_empty_cup_init connect")
 
     def wok_init(self):
         self.wok = Wok()
@@ -187,7 +187,7 @@ class main_window_ctrl(QMainWindow):
 
     def cam_init(self):
         self.cam = Camera()
-        self.cam.cam_init([0])
+        self.cam.cam_init([2])
 
     def PeanutNumClassification_init(self):
         try:
@@ -287,7 +287,7 @@ class main_window_ctrl(QMainWindow):
             if image_path is not None:
                 image = cv2.imread(image_path)
             else:
-                image = self.cam.capture_single(0)
+                image = self.cam.capture_single(2)
 
             file = open('PeanutNumberClassification/roi.json', 'r')
             self.roi = json.loads(file.read())["roi"] # x, y, w, h
@@ -806,7 +806,7 @@ class main_window_ctrl(QMainWindow):
 
                 # turn off waffle machine if 2nd stove is not in use
                 if use_2nd_stove == False:
-                    self.wok.AC(0)
+                    self.wok.AC(1)
 
                 if self.grabbing_spoon == True:
                     self.drop_spoon()
@@ -817,7 +817,7 @@ class main_window_ctrl(QMainWindow):
                 if use_2nd_stove == True:
                     while time.time() - second_start_time < self.time_waffle_heat:
                         time.sleep(0.01)
-                    self.wok.AC(0)       
+                    self.wok.AC(1)       
                     self.ui.textEdit_status.append(f"[INFO]Serving second stove...\n")
                     self.serve_2nd_stove()
                     self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
@@ -857,14 +857,14 @@ class main_window_ctrl(QMainWindow):
             time.sleep(0.01)
         
         if use_2nd_stove == False:
-            self.wok.AC(0)
+            self.wok.AC(1)
 
         self.serve_1st_stove()
 
         if use_2nd_stove == True:
             while time.time() - second_start_time < self.time_waffle_heat:
                 time.sleep(0.01)
-            self.wok.AC(0)       
+            self.wok.AC(1)       
 
         if use_2nd_stove == True:
             self.serve_2nd_stove()
@@ -1008,7 +1008,7 @@ class main_window_ctrl(QMainWindow):
         if self.waffle_machine_on_off == True:
             self.wok.AC(1)
         else:
-            self.wok.AC(0)
+            self.wok.AC(1)
     #endregion
 
     #region parameters

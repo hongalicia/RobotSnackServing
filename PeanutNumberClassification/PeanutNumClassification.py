@@ -10,4 +10,6 @@ class PeanutNumClassification:
         top1_id = int(r_cls.probs.top1)
         names = getattr(r_cls, "names", getattr(self.model, "names", {}))
         class_name = names.get(top1_id, str(top1_id))
+        if class_name == "operating":
+            class_name = "sufficient"
         return class_name
