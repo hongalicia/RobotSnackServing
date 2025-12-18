@@ -13,11 +13,14 @@ from TCP.TCP import *
 from Thermal.thermal_TCP import *
 from CheckEmptyCup.cup_TCP import *
 
+from move_TCP import *  
+
 import cv2
 import json
 import numpy as np
 from enum import Enum
 import threading
+import os
 
 class PAN_POS(Enum):
     HOME = 1
@@ -82,6 +85,7 @@ class main_window_ctrl(QMainWindow):
     def init(self):
         try:
             self.load_parameters()
+            # self.preload_all_trajectories("ROS/trajectories")
 
             self.serving_orders = True
             self.peanuts_wait_for_pan_home = False
@@ -138,7 +142,14 @@ class main_window_ctrl(QMainWindow):
                     self.tcp_thermal_init()
                 except Exception as e:
                     self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
-                    return   
+                    return
+                
+            if 'self.tcp_move' not in globals():
+                try:
+                    self.tcp_move_init()
+                except Exception as e:
+                    self.ui.textEdit_status.append(f"[ERROR]tcp_move_init error: {e}\n")
+                    return      
 
             if 'self.tcp_check_empty_cup' not in globals():
                 try:
@@ -160,7 +171,7 @@ class main_window_ctrl(QMainWindow):
     #region init
     def tcp_init(self):
         self.tcp = TcpClient("192.168.1.111", 9000)
-        self.tcp.connect()
+        # self.tcp.connect()
         self.thread_processing_orders = threading.Thread(target=self.serve_orders)
         self.thread_processing_orders.start() 
 
@@ -171,6 +182,11 @@ class main_window_ctrl(QMainWindow):
         self.tcp_thermal = ThermalClient("192.168.1.133", 9000)
         self.tcp_thermal.connect()
         print("tcp_thermal_init connect")
+
+    def tcp_move_init(self):
+        self.tcp_move = MoveClient("192.168.1.123", 9090)
+        self.tcp_move.connect()
+        print("tcp_move_init connect")
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
@@ -187,7 +203,7 @@ class main_window_ctrl(QMainWindow):
 
     def cam_init(self):
         self.cam = Camera()
-        self.cam.cam_init([2])
+        self.cam.cam_init([0])
 
     def PeanutNumClassification_init(self):
         try:
@@ -284,11 +300,13 @@ class main_window_ctrl(QMainWindow):
         try:
             self.check_pan_pos(PAN_POS.HOME)
 
+            print("Get peanuts amount image.")
             if image_path is not None:
                 image = cv2.imread(image_path)
             else:
-                image = self.cam.capture_single(2)
+                image = self.cam.capture_single(0)
 
+            print("Load peanuts amount roi.")
             file = open('PeanutNumberClassification/roi.json', 'r')
             self.roi = json.loads(file.read())["roi"] # x, y, w, h
             if self.roi[2] != 0 and self.roi[3] != 0: # with & height
@@ -297,6 +315,7 @@ class main_window_ctrl(QMainWindow):
                 image = image[self.roi[1]:bottom, self.roi[0]:right]
 
             # show image
+            print("Show peanuts amount image.")
             image_showed = np.ascontiguousarray(image)
             if save_image:
                 cv2.imwrite(f'PeanutNumberClassification/dataset/peanuts_image{int(time.time())}.png', image_showed)
@@ -305,6 +324,7 @@ class main_window_ctrl(QMainWindow):
             peanuts_pixmap_scaled = peanuts_pixmap.scaled(self.ui.label_image_peanuts.width(), self.ui.label_image_peanuts.height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio)
             self.ui.label_image_peanuts.setPixmap(peanuts_pixmap_scaled)
 
+            print("Checking peanuts amount...")
             output = self.peanutNumClassifier.classify(image)
             return output
         except Exception as e:
@@ -344,7 +364,7 @@ class main_window_ctrl(QMainWindow):
             # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
             # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
             #     return
-
+            self.tcp_move.send("4")
             self.run_trajectory("ROS/trajectories/get_spoon.csv")
             self.grabbing_spoon = True
 
@@ -367,7 +387,8 @@ class main_window_ctrl(QMainWindow):
 
     def spoon_single_peanuts(self):
         try:
-            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=50, acc=500)
+            self.tcp_move.send("5")
+            self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=60, acc=500)
         except Exception as e:
             raise e
 
@@ -385,6 +406,7 @@ class main_window_ctrl(QMainWindow):
             while peanuts_amount == 'operating': 
                 time.sleep(0.01)
                 self.current_order_left_seconds += 0.01
+                self.ui.textEdit_status.append(f"[INFO]Operating. Please remove everything.\n")  
                 peanuts_amount = self.check_peanuts_amount()
 
             while peanuts_amount != 'sufficient':      
@@ -474,7 +496,8 @@ class main_window_ctrl(QMainWindow):
 
     def drop_spoon(self):
         try:
-            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
+            self.tcp_move.send("6")
+            self.run_trajectory("ROS/trajectories/drop_spoon.csv", vel=40, acc=500)
             self.grabbing_spoon = False
 
             if self.current_order_left_seconds > 0:
@@ -516,8 +539,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
+            self.tcp_move.send("1")
+            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=40, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_1st_batter error: {e}\n")
 
@@ -534,8 +557,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=100, acc=500)
+            self.tcp_move.send("2")
+            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_1st_batter error: {e}\n")
 
@@ -552,8 +575,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
-            self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=100, acc=500)
+            self.tcp_move.send("3")
+            self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_1st_batter error: {e}\n")    
 
@@ -1161,4 +1184,3 @@ class main_window_ctrl(QMainWindow):
                 self.thread_counting_left_time.join()  
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]thread_counting_left_time join error: {e}\n")  
-
