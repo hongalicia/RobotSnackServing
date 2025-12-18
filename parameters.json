@@ -1,11 +1,11 @@
 {
-    "ThermalThreshold": 37,
+    "ThermalThreshold": 0,
     "PressButtonTime": 25,
     "GetSpoonTime": 15,
     "SpoonPeanutsTime": 20,
     "DropSpoonTime": 10,
-    "PeanutsHeatFlipTime": 160,
-    "PeanutsHeatingTime": 150,
+    "PeanutsHeatFlipTime": 15,
+    "PeanutsHeatingTime": 10,
     "PeanutsFlipTime": 3,
     "Open1stLidTime": 7,
     "Open2ndLidTime": 10,
@@ -21,7 +21,7 @@
     "Get1stWaffleTime": 25,
     "Get2ndWaffleTime": 25,
     "DropWaffleTime": 5,
-    "WaffleHeatingTime": 155,
+    "WaffleHeatingTime": 30,
     "WaitForWaffleTime": 5,
     "WaitForWafflePourTime": 10
 }

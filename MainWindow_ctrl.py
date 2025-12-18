@@ -144,12 +144,12 @@ class main_window_ctrl(QMainWindow):
                     self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
                     return
                 
-            if 'self.tcp_move' not in globals():
-                try:
-                    self.tcp_move_init()
-                except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp_move_init error: {e}\n")
-                    return      
+            # if 'self.tcp_move' not in globals():
+            #     try:
+            #         self.tcp_move_init()
+            #     except Exception as e:
+            #         self.ui.textEdit_status.append(f"[ERROR]tcp_move_init error: {e}\n")
+            #         return      
 
             if 'self.tcp_check_empty_cup' not in globals():
                 try:
@@ -183,15 +183,15 @@ class main_window_ctrl(QMainWindow):
         self.tcp_thermal.connect()
         print("tcp_thermal_init connect")
 
-    def tcp_move_init(self):
-        self.tcp_move = MoveClient("192.168.1.123", 9090)
-        self.tcp_move.connect()
-        print("tcp_move_init connect")
+    # def tcp_move_init(self):
+    #     self.tcp_move = MoveClient("192.168.1.123", 9090)
+    #     self.tcp_move.connect()
+    #     print("tcp_move_init connect")
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
         print("tcp_check_empty_cup_init start")
-        # self.tcp_check_empty_cup.connect()
+        self.tcp_check_empty_cup.connect()
         print("tcp_check_empty_cup_init connect")
 
     def wok_init(self):
@@ -364,7 +364,7 @@ class main_window_ctrl(QMainWindow):
             # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
             # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
             #     return
-            self.tcp_move.send("4")
+            # self.tcp_move.send("4")
             self.run_trajectory("ROS/trajectories/get_spoon.csv")
             self.grabbing_spoon = True
 
@@ -387,7 +387,7 @@ class main_window_ctrl(QMainWindow):
 
     def spoon_single_peanuts(self):
         try:
-            self.tcp_move.send("5")
+            # self.tcp_move.send("5")
             self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=60, acc=500)
         except Exception as e:
             raise e
@@ -403,9 +403,15 @@ class main_window_ctrl(QMainWindow):
             # check amount of peanuts, refill peanuts if insufficient
             peanuts_amount = self.check_peanuts_amount()
             self.ui.textEdit_status.append(f"[INFO]Check Peanuts Amount: {peanuts_amount}\n")
+            last_t = time.monotonic()
+
             while peanuts_amount == 'operating': 
                 time.sleep(0.01)
-                self.current_order_left_seconds += 0.01
+                # self.current_order_left_seconds += 0.01  #will make the current order time become large infinitely or small infinitely
+                now = time.monotonic()
+                if int(now) != int(last_t):
+                    self.current_order_left_seconds += 1
+                last_t = now
                 self.ui.textEdit_status.append(f"[INFO]Operating. Please remove everything.\n")  
                 peanuts_amount = self.check_peanuts_amount()
 
@@ -465,7 +471,9 @@ class main_window_ctrl(QMainWindow):
                     return 0
                 else:
                     self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
-
+            elif self.tcp_thermal.get_cur_temp() >= self.thermal_threshold:
+                self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")
+                self.ui.textEdit_status.append(f"[INFO]Don't need to re-heat.\n")
             # get spoon
             if self.grabbing_spoon == False:
                 self.ui.textEdit_status.append(f"[INFO]Grabbing spoon...\n")
@@ -496,8 +504,8 @@ class main_window_ctrl(QMainWindow):
 
     def drop_spoon(self):
         try:
-            self.tcp_move.send("6")
-            self.run_trajectory("ROS/trajectories/drop_spoon.csv", vel=40, acc=500)
+            # self.tcp_move.send("6")
+            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
             self.grabbing_spoon = False
 
             if self.current_order_left_seconds > 0:
@@ -539,8 +547,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            self.tcp_move.send("1")
-            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=40, acc=500)
+            # self.tcp_move.send("1")
+            self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_1st_batter error: {e}\n")
 
@@ -549,7 +557,7 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=50, acc=500)
+            self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
 
@@ -557,8 +565,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            self.tcp_move.send("2")
-            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=50, acc=500)
+            # self.tcp_move.send("2")
+            self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_1st_batter error: {e}\n")
 
@@ -575,7 +583,7 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            self.tcp_move.send("3")
+            # self.tcp_move.send("3")
             self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_1st_batter error: {e}\n")    

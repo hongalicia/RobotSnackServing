@@ -14,6 +14,7 @@
 ```bash
 ros2 run tm_driver tm_driver robot_ip:=192.168.1.10
 ```
+- Use Ctrl+Shift+V to paste onto terminal
 
 3. gripper_server:
 ```bash
