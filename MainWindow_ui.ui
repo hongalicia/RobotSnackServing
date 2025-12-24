@@ -343,7 +343,7 @@
        <x>10</x>
        <y>420</y>
        <width>541</width>
-       <height>371</height>
+       <height>411</height>
       </rect>
      </property>
      <property name="title">
@@ -570,14 +570,40 @@
        <string>Go To Default</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="pushButton_CheckWaffleLid">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>360</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Check Waffle Lid</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>370</y>
+        <width>120</width>
+        <height>14</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Check Status:</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QGroupBox" name="groupBox_Serve">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>800</y>
+       <y>840</y>
        <width>541</width>
-       <height>171</height>
+       <height>131</height>
       </rect>
      </property>
      <property name="title">
@@ -586,8 +612,8 @@
      <widget class="QLineEdit" name="lineEdit_NumOfPeanuts">
       <property name="geometry">
        <rect>
-        <x>480</x>
-        <y>40</y>
+        <x>290</x>
+        <y>80</y>
         <width>41</width>
         <height>41</height>
        </rect>
@@ -612,8 +638,8 @@
      <widget class="QLabel" name="label_NumOfPeanuts">
       <property name="geometry">
        <rect>
-        <x>340</x>
-        <y>52</y>
+        <x>150</x>
+        <y>92</y>
         <width>131</width>
         <height>16</height>
        </rect>
@@ -691,7 +717,7 @@
       <property name="geometry">
        <rect>
         <x>340</x>
-        <y>130</y>
+        <y>50</y>
         <width>101</width>
         <height>16</height>
        </rect>
@@ -704,7 +730,7 @@
       <property name="geometry">
        <rect>
         <x>460</x>
-        <y>120</y>
+        <y>40</y>
         <width>61</width>
         <height>41</height>
        </rect>

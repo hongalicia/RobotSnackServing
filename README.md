@@ -40,3 +40,11 @@ cd ~/RobotSnackServing && \
 conda activate isaac-groot-ros2 && \
 python MainWindow_app.py
 ```
+
+7. modify UI
+```bash
+cd RobotSnackServing/
+conda activate isaac-gr00t-ros2
+pyuic5 -x MainWindow_ui.ui -o MainWindow_ui.py
+```
+- change MainWindow_ui.py "from PySide6 "
