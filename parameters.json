@@ -21,7 +21,7 @@
     "Get1stWaffleTime": 25,
     "Get2ndWaffleTime": 25,
     "DropWaffleTime": 5,
-    "WaffleHeatingTime": 30,
+    "WaffleHeatingTime": 155,
     "WaitForWaffleTime": 5,
     "WaitForWafflePourTime": 10
 }
