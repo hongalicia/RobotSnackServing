@@ -582,7 +582,7 @@ class main_window_ctrl(QMainWindow):
             # self.tcp_move.send("1")
 
             state= self.tcp_check_waffle_lid.get_latest()
-            if state.left_lid == LidPos.CLOSED:
+            if state.right_lid == LidPos.CLOSED:
                 self.run_trajectory("ROS/trajectories/open_1st_lid.csv", vel=100, acc=500)
     
             self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
@@ -593,7 +593,9 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
+            state = self.tcp_check_waffle_lid.get_latest()
+            if state.left_lid == LidPos.CLOSED:
+                self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
             self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
@@ -666,6 +668,11 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
+            state = self.tcp_check_waffle_lid.get_latest()
+            if state.left_lid == LidPos.CLOSED:
+                self.ui.textEdit_status.append(f"[INFO]2nd Lid already closed.\n")
+                return
+
             self.run_trajectory("ROS/trajectories/close_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]close_2nd_lid error: {e}\n")
@@ -718,7 +725,11 @@ class main_window_ctrl(QMainWindow):
             if self.grabbing_spoon == True:
                 self.drop_spoon()
 
-            self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=35, acc=500, blend=80)
+            state = self.tcp_check_waffle_lid.get_latest()
+            if state.left_waffle == WafflePos.ON_UPPER_LID:
+                self.run_trajectory("ROS/trajectories/.csv", vel=35, acc=500, blend=80)
+            else:
+                self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=35, acc=500, blend=80)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_2nd_waffle error: {e}\n")
 
@@ -751,6 +762,7 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"[ERROR]Serve Waffle error: {e}\n")
 
     def cook_1st_stove(self):
+        self.pushButton_Open1stLid_clicked()
         self.pushButton_Grab1stBatter_clicked()
         self.pushButton_Pour1stBatter_clicked()
         self.wait_for_waffle_pour()
@@ -758,6 +770,7 @@ class main_window_ctrl(QMainWindow):
         self.pushButton_Close1stLid_clicked()
 
     def cook_2nd_stove(self):
+        self.pushButton_Open2ndLid_clicked()
         self.pushButton_Grab2ndBatter_clicked()
         self.pushButton_Pour2ndBatter_clicked()
         self.wait_for_waffle_pour()
@@ -1235,6 +1248,12 @@ class main_window_ctrl(QMainWindow):
                 self.tcp_check_empty_cup.close()
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup.close error: {e}\n")
+
+        try:
+            if self.tcp_check_waffle_lid:
+                self.tcp_check_waffle_lid.close()
+        except Exception as e:
+            self.ui.textEdit_status.append(f"[ERROR]tcp_check_waffle_lid.close error: {e}\n")
 
         self.serving_orders = False
 
