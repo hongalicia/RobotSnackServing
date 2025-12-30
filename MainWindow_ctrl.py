@@ -357,28 +357,48 @@ class main_window_ctrl(QMainWindow):
     #region peanuts related
     def press_button(self):
         try:
-            self.run_trajectory("ROS/trajectories/press_button1.csv")
-            self.run_trajectory("ROS/trajectories/press_button2.csv")
-
-            if self.current_order_left_seconds > 0:
-                self.current_order_left_seconds += (int)(self.ui.lineEdit_PressButtonTime.text())
+            press_button_time = (int)(self.ui.lineEdit_PressButtonTime.text())
+            success, msg = self.press_button_flow(press_button_time)
+            self.ui.textEdit_status.append(f"[INFO]{msg}\n")
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]press_button error: {e}\n")
 
+    def press_button_flow(self, press_button_time: int | None = None):
+        try:
+            if press_button_time is None:
+                press_button_time = self.parameters["PressButtonTime"]
+            self.run_trajectory("ROS/trajectories/press_button1.csv")
+            self.run_trajectory("ROS/trajectories/press_button2.csv")
+            if self.current_order_left_seconds >0:
+                self.current_order_left_seconds += press_button_time
+            return True, f"Press Button."
+        except Exception as e:
+            return False, f"Hardware execution failed: {str(e)}"
+
+
+
     def get_spoon(self):
         try:
-            # status_peanuts = self.check_peanuts()
-            # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
-            # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
-            #     return
-            self.run_trajectory("ROS/trajectories/get_spoon.csv")
-            self.grabbing_spoon = True
-
-            if self.current_order_left_seconds > 0:
-                self.current_order_left_seconds += (int)(self.ui.lineEdit_GetSpoonTime.text())
+            get_spoon_time = int(self.ui.lineEdit_GetSpoonTime.text())
+            success, msg = self.get_spoon_flow(get_spoon_time)
+            self.ui.textEdit_status.append(f"[INFO]{msg}\n")
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_spoon error: {e}\n")
             raise e
+    
+    def get_spoon_flow(self, get_spoon_time: int | None = None):
+        try:
+            if get_spoon_time is None:
+                get_spoon_time = self.parameters["GetSpoonTime"]
+            self.run_trajectory("ROS/trajectories/get_spoon.csv")
+            self.grabbing_spoon = True
+            if self.current_order_left_seconds >0:
+                self.current_order_left_seconds += get_spoon_time
+            return True, "Get Spoon."
+        except Exception as e:
+            return False, f"Hardware execution failed: {str(e)}"
+
+
 
     def pushButton_SpoonPeanuts_clicked(self):
         try:
@@ -1128,33 +1148,33 @@ class main_window_ctrl(QMainWindow):
     def load_parameters(self):
         try:
             file = open('parameters.json', 'r')
-            parameters = json.loads(file.read())
-            print(parameters)
-            self.ui.lineEdit_ThermalThreshold.setText(str(parameters["ThermalThreshold"]))
-            self.ui.lineEdit_PressButtonTime.setText(str(parameters["PressButtonTime"]))
-            self.ui.lineEdit_GetSpoonTime.setText(str(parameters["GetSpoonTime"]))
-            self.ui.lineEdit_SpoonPeanutsTime.setText(str(parameters["SpoonPeanutsTime"]))
-            self.ui.lineEdit_DropSpoonTime.setText(str(parameters["DropSpoonTime"]))
-            self.ui.lineEdit_PeanutsHeatFlipTime.setText(str(parameters["PeanutsHeatFlipTime"]))
-            self.ui.lineEdit_PeanutsHeatingTime.setText(str(parameters["PeanutsHeatingTime"]))
-            self.ui.lineEdit_PeanutsFlipTime.setText(str(parameters["PeanutsFlipTime"]))
-            self.ui.lineEdit_Open1stLidTime.setText(str(parameters["Open1stLidTime"]))
-            self.ui.lineEdit_Open2ndLidTime.setText(str(parameters["Open2ndLidTime"]))
-            self.ui.lineEdit_Grab1stBatterTime.setText(str(parameters["Grab1stBatterTime"]))
-            self.ui.lineEdit_Grab2ndBatterTime.setText(str(parameters["Grab2ndBatterTime"]))
-            self.ui.lineEdit_Pour1stBatterTime.setText(str(parameters["Pour1stBatterTime"]))
-            self.ui.lineEdit_Pour2ndBatterTime.setText(str(parameters["Pour2ndBatterTime"]))
-            self.ui.lineEdit_Drop1stBatterTime.setText(str(parameters["Drop1stBatterTime"]))
-            self.ui.lineEdit_Drop2ndBatterTime.setText(str(parameters["Drop2ndBatterTime"]))
-            self.ui.lineEdit_Close1stLidTime.setText(str(parameters["Close1stLidTime"]))
-            self.ui.lineEdit_Close2ndLidTime.setText(str(parameters["Close2ndLidTime"]))
-            self.ui.lineEdit_GrabForkTime.setText(str(parameters["GrabForkTime"]))
-            self.ui.lineEdit_Get1stWaffleTime.setText(str(parameters["Get1stWaffleTime"]))
-            self.ui.lineEdit_Get2ndWaffleTime.setText(str(parameters["Get2ndWaffleTime"]))
-            self.ui.lineEdit_DropWaffleTime.setText(str(parameters["DropWaffleTime"]))
-            self.ui.lineEdit_WaffleHeatingTime.setText(str(parameters["WaffleHeatingTime"]))
-            self.ui.lineEdit_WaitForWaffleTime.setText(str(parameters["WaitForWaffleTime"]))
-            self.ui.lineEdit_WaitForWafflePourTime.setText(str(parameters["WaitForWafflePourTime"]))
+            self.parameters = json.loads(file.read())
+            print(self.parameters)
+            self.ui.lineEdit_ThermalThreshold.setText(str(self.parameters["ThermalThreshold"]))
+            self.ui.lineEdit_PressButtonTime.setText(str(self.parameters["PressButtonTime"]))
+            self.ui.lineEdit_GetSpoonTime.setText(str(self.parameters["GetSpoonTime"]))
+            self.ui.lineEdit_SpoonPeanutsTime.setText(str(self.parameters["SpoonPeanutsTime"]))
+            self.ui.lineEdit_DropSpoonTime.setText(str(self.parameters["DropSpoonTime"]))
+            self.ui.lineEdit_PeanutsHeatFlipTime.setText(str(self.parameters["PeanutsHeatFlipTime"]))
+            self.ui.lineEdit_PeanutsHeatingTime.setText(str(self.parameters["PeanutsHeatingTime"]))
+            self.ui.lineEdit_PeanutsFlipTime.setText(str(self.parameters["PeanutsFlipTime"]))
+            self.ui.lineEdit_Open1stLidTime.setText(str(self.parameters["Open1stLidTime"]))
+            self.ui.lineEdit_Open2ndLidTime.setText(str(self.parameters["Open2ndLidTime"]))
+            self.ui.lineEdit_Grab1stBatterTime.setText(str(self.parameters["Grab1stBatterTime"]))
+            self.ui.lineEdit_Grab2ndBatterTime.setText(str(self.parameters["Grab2ndBatterTime"]))
+            self.ui.lineEdit_Pour1stBatterTime.setText(str(self.parameters["Pour1stBatterTime"]))
+            self.ui.lineEdit_Pour2ndBatterTime.setText(str(self.parameters["Pour2ndBatterTime"]))
+            self.ui.lineEdit_Drop1stBatterTime.setText(str(self.parameters["Drop1stBatterTime"]))
+            self.ui.lineEdit_Drop2ndBatterTime.setText(str(self.parameters["Drop2ndBatterTime"]))
+            self.ui.lineEdit_Close1stLidTime.setText(str(self.parameters["Close1stLidTime"]))
+            self.ui.lineEdit_Close2ndLidTime.setText(str(self.parameters["Close2ndLidTime"]))
+            self.ui.lineEdit_GrabForkTime.setText(str(self.parameters["GrabForkTime"]))
+            self.ui.lineEdit_Get1stWaffleTime.setText(str(self.parameters["Get1stWaffleTime"]))
+            self.ui.lineEdit_Get2ndWaffleTime.setText(str(self.parameters["Get2ndWaffleTime"]))
+            self.ui.lineEdit_DropWaffleTime.setText(str(self.parameters["DropWaffleTime"]))
+            self.ui.lineEdit_WaffleHeatingTime.setText(str(self.parameters["WaffleHeatingTime"]))
+            self.ui.lineEdit_WaitForWaffleTime.setText(str(self.parameters["WaitForWaffleTime"]))
+            self.ui.lineEdit_WaitForWafflePourTime.setText(str(self.parameters["WaitForWafflePourTime"]))
             file.close()
         except Exception as e:
             raise e
