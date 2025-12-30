@@ -146,14 +146,7 @@ class main_window_ctrl(QMainWindow):
                 except Exception as e:
                     self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
                     return
-                
-            # if 'self.tcp_move' not in globals():
-            #     try:
-            #         self.tcp_move_init()
-            #     except Exception as e:
-            #         self.ui.textEdit_status.append(f"[ERROR]tcp_move_init error: {e}\n")
-            #         return      
-
+                 
             if 'self.tcp_check_empty_cup' not in globals():
                 try:
                     self.tcp_check_empty_cup_init()
@@ -194,10 +187,7 @@ class main_window_ctrl(QMainWindow):
         # print("tcp_thermal_init connect")
         
 
-    # def tcp_move_init(self):
-    #     self.tcp_move = MoveClient("192.168.1.123", 9090)
-    #     self.tcp_move.connect()
-    #     print("tcp_move_init connect")
+
 
     def tcp_check_empty_cup_init(self):
         self.tcp_check_empty_cup = CupClient("192.168.1.133", 9999)
@@ -381,7 +371,6 @@ class main_window_ctrl(QMainWindow):
             # self.ui.textEdit_status.append(f"check_peanuts: {status_peanuts}\n")
             # if status_peanuts == 'insufficient' or status_peanuts == 'operating':
             #     return
-            # self.tcp_move.send("4")
             self.run_trajectory("ROS/trajectories/get_spoon.csv")
             self.grabbing_spoon = True
 
@@ -404,7 +393,6 @@ class main_window_ctrl(QMainWindow):
 
     def spoon_single_peanuts(self):
         try:
-            # self.tcp_move.send("5")
             self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=60, acc=500)
         except Exception as e:
             raise e
@@ -521,7 +509,7 @@ class main_window_ctrl(QMainWindow):
 
     def drop_spoon(self):
         try:
-            # self.tcp_move.send("6")
+
             self.run_trajectory("ROS/trajectories/drop_spoon.csv")
             self.grabbing_spoon = False
 
@@ -553,6 +541,7 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
 
             state = self.tcp_check_waffle_lid.get_latest()
+
             if state.right_lid == LidPos.OPEN:
                 self.ui.textEdit_status.append(f"[INFO]1st Lid already opened.\n")
                 return
@@ -561,7 +550,7 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]open_1st_lid error: {e}\n")
 
-    def pushButton_Open2ndLid_clicked(self)-> bool:
+    def pushButton_Open2ndLid_clicked(self):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
@@ -569,10 +558,8 @@ class main_window_ctrl(QMainWindow):
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
                 self.ui.textEdit_status.append(f"[INFO]2nd Lid already opened.\n")
-                return False
-            
+                return 
             self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
-            return True
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]open_2nd_lid error: {e}\n")
 
@@ -580,7 +567,6 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            # self.tcp_move.send("1")
 
             state= self.tcp_check_waffle_lid.get_latest()
             if state.right_lid == LidPos.CLOSED:
@@ -605,10 +591,8 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            # self.tcp_move.send("2")
 
             state = self.tcp_check_waffle_lid.get_latest()
-            self.ui.textEdit_status.append(f"lid state: {state}\n")
             if state.right_lid == LidPos.CLOSED:
                 self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
                 self.run_trajectory("ROS/trajectories/open_1st_lid.csv", vel=100, acc=500)
@@ -637,11 +621,6 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-            # self.tcp_move.send("3")
-
-            state = self.tcp_check_waffle_lid.get_latest()
-            self.ui.textEdit_status.append(f"suggest_rdx: {state.suggest_rdx}, suggest_rdy: {state.suggest_rdy}\n")
-
             self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_1st_batter error: {e}\n")    
@@ -650,10 +629,6 @@ class main_window_ctrl(QMainWindow):
         try:
             if self.grabbing_spoon == True:
                 self.drop_spoon()
-
-            state = self.tcp_check_waffle_lid.get_latest()
-            self.ui.textEdit_status.append(f"suggest_ldx: {state.suggest_ldx}, suggest_ldy: {state.suggest_ldy}\n")
-
             self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_2nd_batter error: {e}\n")    
@@ -664,6 +639,8 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
 
             state = self.tcp_check_waffle_lid.get_latest()
+            self.ui.textEdit_status.append(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
+
             if state.right_lid == LidPos.CLOSED:
                 self.ui.textEdit_status.append(f"[INFO]1st Lid already closed.\n")
                 return
@@ -678,6 +655,7 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
 
             state = self.tcp_check_waffle_lid.get_latest()
+            self.ui.textEdit_status.append(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
             if state.left_lid == LidPos.CLOSED:
                 self.ui.textEdit_status.append(f"[INFO]2nd Lid already closed.\n")
                 return
@@ -703,6 +681,9 @@ class main_window_ctrl(QMainWindow):
             self.ui.textEdit_status.append(f"[ERROR]grab_fork error: {e}\n")
 
     def wait_for_waffle_done(self):
+        state = self.tcp_check_waffle_lid.get_latest()
+        self.ui.textEdit_status.append(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
+        self.ui.textEdit_status.append(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
         wait_time = (int)(self.ui.lineEdit_WaitForWaffleTime.text())
         time.sleep(wait_time)
 
@@ -717,11 +698,15 @@ class main_window_ctrl(QMainWindow):
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
-                self.ui.textEdit_status.append(f"[INFO]2nd lid already open. Don't need to drop the fork.\n")
-                return
-
-            self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
-            self.grabbing_fork = False
+                if state.left_waffle == WafflePos.ON_UPPER_LID or state.left_waffle == WafflePos.ON_LOWER_LID:
+                    self.ui.textEdit_status.append(f"[INFO]2nd lid already open and have waffle. Don't need to drop the fork.\n")
+                    return
+                else:
+                    self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
+                    self.grabbing_fork = False
+            else:
+                self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
+                self.grabbing_fork = False
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_fork error: {e}\n")
 
@@ -741,11 +726,11 @@ class main_window_ctrl(QMainWindow):
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_waffle == WafflePos.ON_UPPER_LID:
-                self.ui.textEdit_status.append(f"[ERROR]2nd waffle on upper lid.\n")
-                self.run_trajectory("ROS/trajectories/.csv", vel=35, acc=500, blend=80)
-                
+                self.ui.textEdit_status.append(f"[INFO]2nd waffle on upper lid. RUN Get 2nd Waffle on Top Lid.\n")
+                self.run_trajectory("ROS/trajectories/get_2nd_waffle_top_lid.csv", vel=35, acc=500, blend=100)
             else:
                 self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=35, acc=500, blend=80)
+
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]get_2nd_waffle error: {e}\n")
 
@@ -796,7 +781,7 @@ class main_window_ctrl(QMainWindow):
     def serve_1st_stove(self):
         self.pushButton_Open1stLid_clicked()
         if not self.pushButton_GrabFork_clicked():
-            self.ui.textEdit_status.append("[FLOW] Abort at grab fork, cause waffle is on the upper lid.\n")
+            self.ui.textEdit_status.append("[INFO] Abort at grab fork, cause waffle is on the upper lid.\n")
             return
         self.wait_for_waffle_done()
         self.pushButton_Get1stWaffle_clicked()
@@ -804,13 +789,14 @@ class main_window_ctrl(QMainWindow):
         self.pushButton_DropFork_clicked()
 
     def serve_2nd_stove(self):
-        if self.pushButton_Open2ndLid_clicked():
+        self.pushButton_Open2ndLid_clicked()
+        if self.grabbing_fork == False:
             self.pushButton_GrabFork_clicked()
         self.wait_for_waffle_done()
         self.pushButton_Get2ndWaffle_clicked()
         self.pushButton_DropWaffle_clicked()
-        # self.pushButton_DropFork_clicked()
-        self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
+        self.pushButton_DropFork_clicked()
+        
 
     def pushButton_ServeBoth_clicked(self):
         try:
@@ -946,7 +932,9 @@ class main_window_ctrl(QMainWindow):
                     self.serve_2nd_stove()
                     self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
                 else:
-                    self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
+                    if self.grabbing_fork == True:
+                        self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
+                        self.grabbing_fork = False
                     self.num_left_waffle = self.num_left_waffle + 4 - num_waffle                
 
                 self.waffle_first_stove_start_time = 0

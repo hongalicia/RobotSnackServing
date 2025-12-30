@@ -46,8 +46,9 @@ class Wok(threading.Thread):
         self.check_sum(data)
 
     def AC(self, on_off):
-        data = b'\x88\x66\x41' + bytes([on_off]) + b'\x00\x00\x00'
-        self.check_sum(data)
+        # data = b'\x88\x66\x41' + bytes([on_off]) + b'\x00\x00\x00'
+        # self.check_sum(data)
+        print("AC is called")
 
     def heat(self):
         data = b'\x88\x66\x48\x00\x00\x00\x00'
