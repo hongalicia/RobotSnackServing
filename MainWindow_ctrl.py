@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QCloseEvent, QPixmap, QImage
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, QTimer
 
 from MainWindow_ui import Ui_MainWindow
 from Camera.camera import *
@@ -13,7 +13,7 @@ from TCP.TCP import *
 from Thermal.thermal_TCP import *
 from CheckEmptyCup.cup_TCP import *
 from CheckWaffleLid.lid_TCP import *
-
+from web_panel import WebPanel
 from move_TCP import *  
 
 import cv2
@@ -29,12 +29,22 @@ class PAN_POS(Enum):
     UNKNOWN = 3
 
 class main_window_ctrl(QMainWindow):
+    statusChanged = Signal(str)
+    tempChanged = Signal(float)
+    grabbingSpoonChanged = Signal(bool)
+    peanutStatusChanged = Signal(str)
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui_connect()
         self.init()
+        self.open_web_panel()
+        
+        self.statusChanged.connect(self.on_status_changed)
+        self.temp_timer = QTimer(self)
+        self.temp_timer.timeout.connect(self._emit_temp)
+        self.temp_timer.start(1000)  # 每 1 秒更新一次
 
     # ---------------- UI 綁定 ----------------
     def ui_connect(self):
@@ -98,8 +108,14 @@ class main_window_ctrl(QMainWindow):
             
             self.num_left_waffle = 0
             self.grabbing_spoon = False
+            self.grabbingSpoonChanged.emit(False)
             self.grabbing_fork = False
             self.waffle_machine_on_off = False          
+            self.right_cartesian_pose = [377.204,-450.270,344.386,-97.57,-43.60,-81.72]
+            self.suggest_1st_lid_x = 1.4
+            self.suggest_1st_lid_y = 3.5
+            self.suggest_2nd_lid_x = 0
+            self.suggest_2nd_lid_y = 0
 
             self.time_peanut_heat = (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
             self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
@@ -333,33 +349,36 @@ class main_window_ctrl(QMainWindow):
 
             print("Checking peanuts amount...")
             output = self.peanutNumClassifier.classify(image)
+            self.peanutStatusChanged.emit(output)
             return output
         except Exception as e:
             raise e
     #endregion           
 
     #region graspgen
-    def pushButton_GrabNDumpPeanuts_clicked(self):
+    def grasp_and_dump_peanuts_flow(self):
          try:
             self.check_pan_pos(PAN_POS.DOWN)
 
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
             if self.current_order_left_seconds > 0:
                 self.current_order_left_seconds += 65
             data = {"actions": "Grasp_and_Dump"}
             message = self.graspGenCommunication.send_data(data)
-            self.ui.textEdit_status.append(f"[INFO]graspGenCommunication return message: {message}\n")
+            self.statusChanged.emit(f"[INFO]graspGen {message}")
          except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]pushButton_GrabNDumpPeanuts_clicked error: {e}\n")
+
+    def pushButton_GrabNDumpPeanuts_clicked(self):
+        self.grasp_and_dump_peanuts_flow()
     #endregion
 
     #region peanuts related
     def press_button(self):
         try:
             press_button_time = (int)(self.ui.lineEdit_PressButtonTime.text())
-            success, msg = self.press_button_flow(press_button_time)
-            self.ui.textEdit_status.append(f"[INFO]{msg}\n")
+            self.press_button_flow(press_button_time)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]press_button error: {e}\n")
 
@@ -367,36 +386,41 @@ class main_window_ctrl(QMainWindow):
         try:
             if press_button_time is None:
                 press_button_time = self.parameters["PressButtonTime"]
+            self.statusChanged.emit("[INFO] 🔧 start Pressing Button.")
             self.run_trajectory("ROS/trajectories/press_button1.csv")
             self.run_trajectory("ROS/trajectories/press_button2.csv")
+            
             if self.current_order_left_seconds >0:
                 self.current_order_left_seconds += press_button_time
-            return True, f"Press Button."
+            self.statusChanged.emit("[INFO] ✅ Pressing Button Done.")
         except Exception as e:
-            return False, f"Hardware execution failed: {str(e)}"
+            self.statusChanged.emit("[ERROR] ❌ Pressing Button Failed")
+            self.statusChanged.emit(f"[ERROR]press button error: {e}\n")
 
 
 
     def get_spoon(self):
         try:
             get_spoon_time = int(self.ui.lineEdit_GetSpoonTime.text())
-            success, msg = self.get_spoon_flow(get_spoon_time)
-            self.ui.textEdit_status.append(f"[INFO]{msg}\n")
+            self.get_spoon_flow(get_spoon_time)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]get_spoon error: {e}\n")
-            raise e
+            self.ui.textEdit_status.append(f"[ERROR]get_spoon{e}\n")
     
     def get_spoon_flow(self, get_spoon_time: int | None = None):
         try:
             if get_spoon_time is None:
                 get_spoon_time = self.parameters["GetSpoonTime"]
+            self.statusChanged.emit("[INFO] 🔧 開始拿取湯匙")
             self.run_trajectory("ROS/trajectories/get_spoon.csv")
             self.grabbing_spoon = True
+            self.grabbingSpoonChanged.emit(True)
             if self.current_order_left_seconds >0:
                 self.current_order_left_seconds += get_spoon_time
-            return True, "Get Spoon."
+            self.statusChanged.emit("[INFO] ✅ 拿取湯匙完成")
         except Exception as e:
-            return False, f"Hardware execution failed: {str(e)}"
+            self.statusChanged.emit("[ERROR] ❌ 拿取湯匙失敗")
+            self.statusChanged.emit(f"[ERROR]get_spoon error: {e}\n")
+
 
 
 
@@ -427,7 +451,7 @@ class main_window_ctrl(QMainWindow):
 
             # check amount of peanuts, refill peanuts if insufficient
             peanuts_amount = self.check_peanuts_amount()
-            self.ui.textEdit_status.append(f"[INFO]Check Peanuts Amount: {peanuts_amount}\n")
+            self.statusChanged.emit(f"[INFO] 🥜 檢查花生數量: {peanuts_amount}")
             last_t = time.monotonic()
 
             while peanuts_amount == 'operating': 
@@ -437,25 +461,25 @@ class main_window_ctrl(QMainWindow):
                 if int(now) != int(last_t):
                     self.current_order_left_seconds += 1
                 last_t = now
-                self.ui.textEdit_status.append(f"[INFO]Operating. Please remove everything.\n")  
+                self.statusChanged.emit(f"[INFO]Operating. Please remove everything.") 
                 peanuts_amount = self.check_peanuts_amount()
 
             while peanuts_amount != 'sufficient':      
                 # check if there's any empty cup     
                 while self.tcp_check_empty_cup.get_isEmpty() == True:
-                    self.ui.textEdit_status.append(f"[WARNING]Please refill the peanut cup.\n")               
+                    self.statusChanged.emit("[WARNING]Please refill the peanut cup.")               
                     time.sleep(0.01)
                     self.current_order_left_seconds += 0.01
 
                 # no empty cup, run GraspGen
-                self.ui.textEdit_status.append(f"[INFO]GraspGen Refilling Peanuts...\n")
+                self.statusChanged.emit("[INFO]GraspGen Refilling Peanuts...")
                 self.pushButton_GrabNDumpPeanuts_clicked()
 
                 # check peanuts amount before spooning
                 peanuts_amount = self.check_peanuts_amount()
                 if peanuts_amount == 'sufficient':
                     self.pressing_button_needed = True   
-                    self.ui.textEdit_status.append(f"[INFO]Peanuts refilled.\n")
+                    self.statusChanged.emit("[INFO]Peanuts refilled.")
                     break
                 time.sleep(1)
                 self.current_order_left_seconds += 1
@@ -463,63 +487,64 @@ class main_window_ctrl(QMainWindow):
             # press button if needed
             if self.pressing_button_needed == True:
                 if self.grabbing_spoon == True:
-                    self.ui.textEdit_status.append(f"[INFO]Dropping spoon...\n")
-                    self.drop_spoon()
-                    self.ui.textEdit_status.append(f"[INFO]Spoon dropped.\n")
+                    self.statusChanged.emit("[INFO]Dropping spoon...")
+                    self.drop_spoon_flow()
+                    self.statusChanged.emit("[INFO]Spoon drop...")
                     
                 self.pan_position = PAN_POS.DOWN
-                self.ui.textEdit_status.append(f"[INFO]Pressing button...\n")
-                self.press_button()
-                self.ui.textEdit_status.append(f"[INFO]Button pressed.\n")
-
+                self.statusChanged.emit("[INFO]Pressing button...")
+                self.press_button_flow()
+                self.statusChanged.emit("[INFO]Button pressed.")
                 self.peanuts_wait_for_pan_home = True            
                 self.pressing_button_needed = False
 
                 # get back to waffle is waffle is cooking
                 if self.waffle_first_stove_start_time != 0:
-                    self.ui.textEdit_status.append(f"[INFO]Return to waffle.\n")
+                    self.statusChanged.emit("[INFO]Return to waffle.")
                     return 0
                 else:
-                    self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatFlipTime.text())
+                    PeanutsHeatFlipTime = self.parameters["PeanutsHeatFlipTime"]
+                    self.current_order_left_seconds += PeanutsHeatFlipTime
             
             # reheat peanuts if needed
             elif self.tcp_thermal.get_cur_temp() < self.thermal_threshold:
-                self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")
+                self.statusChanged.emit(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}")
                 self.pan_position = PAN_POS.DOWN
-                self.ui.textEdit_status.append(f"[INFO]Re-heating.\n")
+                self.statusChanged.emit("[INFO]Re-heating.")
                 self.wok.heat()                
                 self.peanuts_wait_for_pan_home = True
 
                 # get back to waffle is waffle is cooking
                 if self.waffle_first_stove_start_time != 0:
-                    self.ui.textEdit_status.append(f"[INFO]Return to waffle.\n")
+                    self.statusChanged.emit("[INFO]Return to waffle.")
                     return 0
                 else:
-                    self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
+                    self.current_order_left_seconds += self.parameters["PeanutsHeatFlipTime"]
             elif self.tcp_thermal.get_cur_temp() >= self.thermal_threshold:
-                self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")
-                self.ui.textEdit_status.append(f"[INFO]Don't need to re-heat.\n")
+                self.statusChanged.emit(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}")
+                self.statusChanged.emit(f"[INFO]Don't need to re-heat.")
+
             # get spoon
             if self.grabbing_spoon == False:
-                self.ui.textEdit_status.append(f"[INFO]Grabbing spoon...\n")
-                self.get_spoon()
-                self.ui.textEdit_status.append(f"[INFO]Grab spoon done.\n")
+                self.statusChanged.emit(f"[INFO]Grabbing spoon...")
+                self.get_spoon_flow()
+                self.statusChanged.emit(f"[INFO]Grab spoon done.")
 
             # check pan position
-            self.ui.textEdit_status.append(f"[INFO]Wait for HOME.\n")
+            self.statusChanged.emit(f"[INFO]Wait for HOME.")
             while self.pan_position != PAN_POS.HOME:
                 time.sleep(0.01)
             self.peanuts_wait_for_pan_home = False
 
             # spoon peanuts              
-            self.ui.textEdit_status.append(f"[INFO]Spooning...\n")
+            self.statusChanged.emit(f"[INFO]Spooning...")
             self.spoon_single_peanuts()
             
             self.pan_position = PAN_POS.DOWN
-            self.ui.textEdit_status.append(f"[INFO]Flipping...\n")
+            self.statusChanged.emit(f"[INFO]Flipping...")
             self.pan_flip()            
 
-            self.ui.textEdit_status.append(f"[INFO]Wait for HOME.\n")
+            self.statusChanged.emit(f"[INFO]Wait for HOME.")
             while self.pan_position != PAN_POS.HOME:
                 time.sleep(0.01)
 
@@ -527,16 +552,35 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             raise e
 
+    def spoon_peanuts_flow(self):
+        self.statusChanged.emit("[INFO] 🥄 開始執行 spoon peanuts 流程")
+        result = self.spoon_peanuts()
+        self.statusChanged.emit("[INFO] 🥄 spoon peanuts 流程結束")
+        return result
+
     def drop_spoon(self):
         try:
-
-            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
-            self.grabbing_spoon = False
-
-            if self.current_order_left_seconds > 0:
-                self.current_order_left_seconds += (int)(self.ui.lineEdit_DropSpoonTime.text())
+            drop_spoon_time = int(self.ui.lineEdit_DropSpoonTime.text())
+            self.drop_spoon_flow(drop_spoon_time)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]drop_spoon error: {e}\n")
+
+    def drop_spoon_flow(self,drop_spoon_time: int | None = None):
+        try:
+            if drop_spoon_time is None:
+                drop_spoon_time = self.parameters["DropSpoonTime"]
+            self.statusChanged.emit("[INFO] 🔧 開始放湯匙")
+            self.run_trajectory("ROS/trajectories/drop_spoon.csv")
+            self.grabbing_spoon = False
+            self.grabbingSpoonChanged.emit(False)
+            if self.current_order_left_seconds > 0:
+                self.current_order_left_seconds += drop_spoon_time
+            self.statusChanged.emit("[INFO] ✅ 放湯匙完成")
+        except Exception as e:
+            self.statusChanged.emit("[ERROR] ❌ 放取湯匙失敗")
+            self.statusChanged.emit(f"[ERROR]drop_spoon error: {e}\n")
+
+        
 
     def pushButton_ServePeanuts_clicked(self):
         try:
@@ -552,8 +596,7 @@ class main_window_ctrl(QMainWindow):
     #region waffle related
     def pushButton_CheckWaffleLid_clicked(self):
         state = self.tcp_check_waffle_lid.get_latest()
-        self.ui.textEdit_status.append(f"Lid State: {state}")
-       
+        self.statusChanged.emit(f"Lid State: {state}")
     
     def pushButton_Open1stLid_clicked(self):
         try:
@@ -606,7 +649,13 @@ class main_window_ctrl(QMainWindow):
             self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
-
+    def apply_offset(self,v):
+        if v > 0:
+            return 5 if v <= 1 else 10
+        elif v < 0:
+            return -5 if v >= -1 else -10
+        else:
+            return 0
     def pushButton_Pour1stBatter_clicked(self):
         try:
             if self.grabbing_spoon == True:
@@ -619,6 +668,14 @@ class main_window_ctrl(QMainWindow):
                 self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
 
             self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=100, acc=500)
+            time.sleep(3)
+            
+            cartesian_pose = [377.204,-450.270,344.386,-97.57,-43.60,-81.72]
+            cartesian_pose[0] += self.apply_offset(self.suggest_1st_lid_x)
+            cartesian_pose[1] += self.apply_offset(self.suggest_1st_lid_y)
+            
+            self.ui.textEdit_status.append(f"certesian_pose:{cartesian_pose}\n")
+            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_1st_batter error: {e}\n")
 
@@ -634,6 +691,12 @@ class main_window_ctrl(QMainWindow):
                 self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
 
             self.run_trajectory("ROS/trajectories/pour_2nd_batter.csv", vel=100, acc=500)
+            cartesian_pose = [372.229,-200.201,344.319,-97.58,-43.59,-81.71]
+            time.sleep(3)
+            cartesian_pose[0] += self.apply_offset(self.suggest_2nd_lid_x)
+            cartesian_pose[1] += self.apply_offset(self.suggest_2nd_lid_y)
+            self.ui.textEdit_status.append(f"certesian_pose:{cartesian_pose}\n")
+            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]pour_2nd_batter error: {e}\n")
 
@@ -703,6 +766,12 @@ class main_window_ctrl(QMainWindow):
     def wait_for_waffle_done(self):
         state = self.tcp_check_waffle_lid.get_latest()
         self.ui.textEdit_status.append(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
+        if state.suggest_rdx is not None and state.suggest_rdy is not None:
+            self.suggest_1st_lid_x = state.suggest_rdx
+            self.suggest_1st_lid_y = state.suggest_rdy
+        if state.suggest_ldx is not None and state.suggest_ldy is not None:
+            self.suggest_2nd_lid_x = state.suggest_ldx
+            self.suggest_2nd_lid_y = state.suggest_ldy
         self.ui.textEdit_status.append(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
         wait_time = (int)(self.ui.lineEdit_WaitForWaffleTime.text())
         time.sleep(wait_time)
@@ -841,14 +910,14 @@ class main_window_ctrl(QMainWindow):
     #region serving orders
     def serve_orders(self):
         while self.serving_orders == True:
-
             if self.tcp.received_orders.empty() == True:
                 continue
 
             try:
                 order = self.tcp.received_orders.get()
+                print(f"{order}, {order.peanuts_num}, {order.waffle_num}")
                 self.ui.textEdit_status.append(f"[INFO]Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
-
+                print("log appended")
                 if order.waffle_num <= self.num_left_waffle:
                     self.num_left_waffle -= order.waffle_num
                     order.waffle_num = 0
@@ -1011,13 +1080,12 @@ class main_window_ctrl(QMainWindow):
         try:
             count = 1
             while count <= num_peanuts:                
-                self.spoon_peanuts()
-                self.ui.textEdit_status.append(f"[INFO]Spoon peanuts: {count}.\n")             
+                self.spoon_peanuts_flow()
+                self.statusChanged.emit(f"[INFO]🥜 Spoon peanuts: {count}")             
                 count += 1         
-            
-            self.ui.textEdit_status.append(f"[INFO]Serve Peanuts done.\n")
+            self.statusChanged.emit(f"[INFO]🥜 Serve Peanuts done.")
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]Spoon peanuts error: {e}.\n") 
+            self.statusChanged.emit(f"[ERROR]🥜 Serve Peanuts error: {e}.")
     #endregion
     
         
@@ -1126,8 +1194,9 @@ class main_window_ctrl(QMainWindow):
 
     def pan_flip(self):
         if self.current_order_left_seconds > 0:
-            self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsFlipTime.text())
-            
+            # self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsFlipTime.text())
+            self.current_order_left_seconds += self.parameters["PeanutsHeatFlipTime"]
+
         self.wok.flip()        
     
     def pan_heat(self):
@@ -1300,3 +1369,16 @@ class main_window_ctrl(QMainWindow):
                 self.thread_counting_left_time.join()  
         except Exception as e:
             self.ui.textEdit_status.append(f"[ERROR]thread_counting_left_time join error: {e}\n")  
+    def open_web_panel(self):
+        if not hasattr(self, "_web_panel"):
+            self._web_panel = WebPanel(self)
+        self._web_panel.show()
+        self._web_panel.raise_()
+
+    def on_status_changed(self,msg: str):
+        print("QT UI received:", msg)  # ← 你一定會看到
+        self.ui.textEdit_status.append(msg)
+
+    def _emit_temp(self):
+        temp = self.tcp_thermal.get_cur_temp()
+        self.tempChanged.emit(temp)

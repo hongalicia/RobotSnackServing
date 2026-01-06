@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Isaac Sim Control Interface (Qt WebChannel)</title>
+
+  <!-- Qt WebChannel（一定要有） -->
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+  <style>
+    /* --- 全局設定 --- */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Microsoft JhengHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      background-color: #121212;
+    }
+    .page {
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+    .main-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* --- 左側：Isaac Sim 畫面 --- */
+    .sim-view {
+      flex: 3;
+      background-color: #000;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-right: 2px solid #0288D1;
+    }
+    .sim-placeholder-text {
+      color: #4FC3F7;
+      text-align: center;
+      opacity: 0.7;
+    }
+    .sim-placeholder-text h2 { margin: 0; font-size: 24px; }
+    .sim-placeholder-text p { margin-top: 10px; font-size: 14px; }
+
+    /* --- 右側：UI 面板 --- */
+    .ui-panel {
+      flex: 1;
+      min-width: 320px;
+      background: linear-gradient(180deg, #4FC3F7 0%, #0288D1 100%);
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-sizing: border-box;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* --- 通用卡片 --- */
+    .card {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(5px);
+    }
+
+    /* --- 0. 頂部控制列 --- */
+    .top-control-bar .btn {
+      min-width: 100px; 
+      height: 55px; 
+      font-size: 16px;
+      padding: 0 15px;
+      margin-right: 10px;
+    }
+
+    /* 為了讓頂部按鈕整齊，調整控制列的 padding 不要太誇張 */
+    .top-control-bar {
+      display: flex;
+      justify-content: center; /* 改成靠左排列，這樣按鈕會連在一起 */
+      align-items: center;
+      padding: 15px 20px; /* 縮小上下間距，讓它不要佔據太多高度 */
+    }
+    .mode-group {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 4px;
+      border-radius: 8px;
+      gap: 2px;
+    }
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .mode-btn.active {
+      background-color: #01579B;
+      color: #FFF;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .mode-btn:hover:not(.active) {
+      color: #FFF;
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .settings-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* --- 1. 訊息欄位 --- */
+    .message-bar {
+      background: rgba(1, 87, 155, 0.8);
+      color: #fff;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      border-left: 5px solid #FFD600;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    .msg-icon { margin-right: 10px; font-size: 20px; }
+
+    /* --- 2. 狀態欄位 --- */
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 245, 157, 0.25);
+      border: 1px solid rgba(255, 241, 118, 0.4);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .status-label {
+      color: #FFFDE7;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .status-icon { margin-right: 8px; font-size: 16px; }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 4px 8px;
+      border-radius: 20px;
+      color: white;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background-color: #ccc;
+    }
+    .dot.green { background-color: #00E676; box-shadow: 0 0 5px #00E676; }
+    .dot.red { background-color: #FF1744; box-shadow: 0 0 5px #FF1744; }
+    .dot.yellow { background-color: #FFD600; box-shadow: 0 0 5px #FFD600; }
+    .dot.gray { background-color: #B0BEC5; }
+
+    /* --- 3. 動作欄位 --- */
+    .action-section {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+      overflow-y: auto;
+    }
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 15px 5px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    .btn i { font-size: 20px; margin-bottom: 5px; font-style: normal;}
+    .btn:active { transform: translateY(4px); box-shadow: none; }
+
+    .btn-blue { background: linear-gradient(to bottom, #29B6F6, #0288D1); }
+    .btn-blue:hover { background: linear-gradient(to bottom, #4FC3F7, #039BE5); }
+    .btn-orange { background: linear-gradient(to bottom, #FF7043, #D84315); }
+    .btn-orange:hover { background: linear-gradient(to bottom, #FF8A65, #E64A19); }
+    .btn-green { background: linear-gradient(to bottom, #66BB6A, #2E7D32); }
+    .btn-green:hover { background: linear-gradient(to bottom, #81C784, #388E3C); }
+    .btn-purple { background: linear-gradient(to bottom, #AB47BC, #7B1FA2); }
+    .btn-purple:hover { background: linear-gradient(to bottom, #BA68C8, #8E24AA); }
+    .btn-secondary {background: rgba(255,255,255,0.25);color: white;}
+
+    .section-title {
+      font-size: 15px;
+      color: rgba(255,255,255,0.7);
+      margin: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 2px;
+    }
+
+    .workflow-editor {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+      height: calc(100% - 120px);
+    }
+
+    .workflow-panel {
+      flex: 1;
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      color: white;
+    }
+
+    .palette,
+    .workflow-list {
+      flex: 1;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-item {
+      background: rgba(255,255,255,0.25);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: grab;
+      user-select: none;
+      font-weight: bold;
+    }
+
+    .step-item.dragging {
+      opacity: 0.5;
+    }
+
+    .workflow-list {
+      border: 2px dashed rgba(255,255,255,0.3);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .hint {
+      opacity: 0.5;
+      font-style: italic;
+    }
+
+    .step-badge {
+      background: rgba(79, 195, 247, 0.2);
+      border: 1px solid #4FC3F7;
+      color: #FFF;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .default-tag {
+      background: rgba(255, 214, 0, 0.2);
+      border: 1px solid #FFD600;
+      color: #FFD600;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="page-main" class="page active">
+    <div class="main-container">
+      <div class="sim-view" id="simView">
+        <div class="sim-placeholder-text">
+          <h2>ISAAC SIM STREAM</h2>
+          <p>WebRTC 影像流顯示區域</p>
+        </div>
+      </div>
+
+      <div class="ui-panel">
+        <div class="top-control-bar">
+          <button class="btn btn-secondary" onclick="goWorkflowPage()">⚙️ 流程設定</button>
+          <button class="btn btn-secondary" onclick="sendAction('virtual_validation')">⚙️ 虛擬驗證</button>
+          <button class="btn btn-secondary" onclick="sendAction('digital_twin')">⚙️ 虛實同動</button>
+        </div>
+
+        <div class="card message-bar">
+          <span class="msg-icon">ℹ️</span>
+          <span id="systemMsg">系統訊息: 系統已連線。目前模式: 自動</span>
+        </div>
+
+        <div class="card status-section">
+          <div class="section-title">設備監控</div>
+          <div class="status-row">
+            <span class="status-label"><span class="status-icon">🥜</span>花生存量</span>
+            <div class="status-indicator">
+              <span class="dot green" id="peanutDot"></span>
+              <span id="peanutText">充足</span>
+            </div>
+          </div>
+          <div class="status-row">
+            <span class="status-label"><span class="status-icon">🥄</span>鏟子狀態</span>
+            <div class="status-indicator">
+              <span class="dot gray" id="shovelDot"></span>
+              <span id="shovelText">閒置</span>
+            </div>
+          </div>
+          <div class="status-row">
+            <span class="status-label"><span class="status-icon"></span>🧇鬆餅機</span>
+            <div class="status-indicator">
+              <span class="dot green" id="waffleDot"></span>
+              <span id="waffleText">就緒</span>
+            </div>
+          </div>
+          <div class="status-row">
+            <span class="status-label"><span class="status-icon">🔥</span>加熱溫度</span>
+            <div class="status-indicator">
+              <span class="dot yellow" id="heatDot"></span>
+              <span id="heatText">180°C (恆溫)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-section">
+          <div class="section-title">原料操作</div>
+          <div class="action-grid">
+            <button class="btn btn-purple" onclick="sendAction('refill_peanut')"><i>📥</i>補充花生</button>
+            <button class="btn btn-blue" onclick="sendAction('get_spoon')"><i>⬇️</i>拿鏟子</button>
+            <button class="btn btn-blue" onclick="sendAction('spoon_peanuts')"><i>🥄</i>鏟花生</button>
+            <button class="btn btn-blue" onclick="sendAction('drop_spoon')"><i>🔄</i>放鏟子</button>
+          </div>
+          <div class="section-title" style="margin-top: 15px;">製作程序</div>
+          <div class="action-grid">
+            <button class="btn btn-orange" onclick="sendAction('toggle_heat')" style="grid-column: span 2;"><i>🔥</i>加熱花生 / 溫控</button>
+            <button class="btn btn-green" onclick="sendAction('make_waffle_a')"><i> 🧇 </i>製作鬆餅</button>
+            <button class="btn btn-green" onclick="sendAction('serve_peanuts')"><i>🥜</i>製作花生(標準)</button>
+          </div>
+          <div class="section-title" style="margin-top: 15px;">📋 當前排定程序</div>
+          <div class="card" style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(255,255,255,0.2); min-height: 60px; padding: 10px; margin-bottom: 10px;">
+            <div id="mainWorkflowPreview" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+              <span class="hint" style="font-size: 12px;">(目前無自定義流程，將執行標準程序)</span>
+            </div>
+          </div>
+
+          <button class="btn btn-purple" id="runCustomBtn" onclick="executeCurrentWorkflow()" style="width: 100%; height: 50px; font-size: 16px;">
+            <i>🚀</i> 啟動程序
+          </button>  
+        </div>
+      </div>
+    </div>
+  </div> 
+  <div id="page-workflow" class="page">
+    <div class="ui-panel" style="width:100%; height:100%;">
+
+      <h2 style="color:white; margin-bottom:10px;">流程設定</h2>
+      <p style="color:white; opacity:0.7;">
+        從左側拖拉流程到右側，並調整執行順序
+      </p>
+
+      <div class="workflow-editor">
+
+        <!-- 左：流程庫 -->
+        <div class="workflow-panel">
+          <h3>可用流程</h3>
+          <div class="palette">
+            <!-- <div class="step-item" draggable="true" data-step="press_button">🔘 Press Button</div> -->
+            <div class="step-item" draggable="true" data-step="get_spoon">🥄 Get Spoon</div>
+            <div class="step-item" draggable="true" data-step="spoon_peanuts">🥜 Spoon Peanuts</div>
+            <div class="step-item" draggable="true" data-step="drop_spoon">🔄 Drop Spoon</div>
+          </div>
+        </div>
+
+        <!-- 右：實際流程 -->
+        <div class="workflow-panel">
+          <h3>執行流程</h3>
+          <div id="workflowList" class="workflow-list">
+            <div class="hint">⬅ 從左側拖拉流程到這裡</div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="btn btn-secondary" onclick="goMainPage()" style="margin-top:20px;">
+        ⬅ 回主頁
+      </button>
+
+    </div>
+  </div>
+  <script>
+    let bridge = null;
+
+    /* =========================
+    * 系統訊息顯示
+    * ========================= */
+    function setSystemMsg(text) {
+      const el = document.getElementById("systemMsg");
+      if (!el) {
+        console.log("systemMsg element not found");
+        return;
+      }
+      el.textContent = text;
+    }
+
+
+    function initBridge() {
+      if (typeof qt === "undefined" || !qt.webChannelTransport) {
+        setSystemMsg("（非 Qt WebEngine 環境）");
+        return;
+      }
+
+      new QWebChannel(qt.webChannelTransport, function (channel) {
+        bridge = channel.objects.bridge;
+        console.log("bridge ready", bridge);
+
+        /* ===== 系統 / 動作狀態 ===== */
+        if (bridge.statusChanged) {
+          bridge.statusChanged.connect(function (msg) {
+            console.log("WEB RECEIVED status:", msg);
+            setSystemMsg(msg);
+          });
+        }
+
+        /* ===== 溫度即時更新 ===== */
+        if (bridge.tempChanged) {
+          bridge.tempChanged.connect(function (temp) {
+            console.log("WEB RECEIVED temp:", temp);
+
+            const dot = document.getElementById("heatDot");
+            const text = document.getElementById("heatText");
+            if (!dot || !text) return;
+
+            text.textContent = temp.toFixed(1) + " °C";
+            if (temp < 160) {
+              dot.className = "dot gray";
+            } else if (temp < 180) {
+              dot.className = "dot yellow";
+            } else {
+              dot.className = "dot green";
+            }
+          });
+        }
+        
+        /* ===== spoon status 即時更新 ===== */
+        bridge.grabbingSpoonChanged.connect(function(isGrabbing) {
+          const dot = document.getElementById("shovelDot");
+          const text = document.getElementById("shovelText");
+          if (!dot || !text) return;
+
+          if (isGrabbing) {
+            dot.className = "dot green";
+            text.textContent = "拿起";
+          } else {
+            dot.className = "dot gray";
+            text.textContent = "放下";
+          }
+        });
+
+        /* ===== peanuts status 即時更新 ===== */
+        bridge.peanutStatusChanged.connect(function(status) {
+          const dot = document.getElementById("peanutDot");
+          const text = document.getElementById("peanutText");
+
+          if (status === "sufficient") {
+            dot.className = "dot green";
+            text.textContent = "充足";
+          } else if (status === "insufficient") {
+            dot.className = "dot red";
+            text.textContent = "不足";
+          } else if (status === "operating") {
+            dot.className = "dot yellow";
+            text.textContent = "操作中";
+          }
+        });
+      });
+    }
+
+    function goWorkflowPage() {
+      const main = document.getElementById("page-main");
+      const flow = document.getElementById("page-workflow");
+
+      console.log("goWorkflowPage", main, flow);
+
+      if (!main || !flow) {
+        console.error("❌ page-main 或 page-workflow 不存在");
+        return;
+      }
+
+      main.classList.remove("active");
+      flow.classList.add("active");
+    }
+
+    function goMainPage() {
+      const main = document.getElementById("page-main");
+      const flow = document.getElementById("page-workflow");
+
+      console.log("goMainPage", main, flow);
+
+      if (!main || !flow) {
+        console.error("❌ page-main 或 page-workflow 不存在");
+        return;
+      }
+
+      flow.classList.remove("active");
+      main.classList.add("active");
+    }
+    /* =========================
+    * Web → Qt 動作呼叫
+    * ========================= */
+    function sendAction(actionKey) {
+      if (!bridge || !bridge.sendAction) {
+        setSystemMsg("（非 Qt）執行：" + actionKey);
+        return;
+      }
+
+      console.log("WEB sendAction:", actionKey);
+      bridge.sendAction(actionKey);
+    }
+
+
+    let draggingItem = null;
+    let dragSource = null;
+
+    // --- 1. 左側流程庫（來源） ---
+    document.querySelectorAll(".palette .step-item").forEach(item => {
+      item.addEventListener("dragstart", (e) => {
+        dragSource = "palette";
+        draggingItem = item;
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+      });
+    });
+
+    // --- 2. 右側清單（目的地） ---
+    const workflowList = document.getElementById("workflowList");
+
+    workflowList.addEventListener("dragover", e => {
+      e.preventDefault(); // 允許放置
+      const afterElement = getDragAfterElement(workflowList, e.clientY);
+      
+      // 如果是內部排序，給予即時預覽
+      if (dragSource === "workflow" && draggingItem) {
+        if (afterElement == null) {
+          workflowList.appendChild(draggingItem);
+        } else {
+          workflowList.insertBefore(draggingItem, afterElement);
+        }
+      }
+    });
+
+    workflowList.addEventListener("drop", e => {
+      e.preventDefault();
+      
+      // 移除提示文字
+      const hint = workflowList.querySelector(".hint");
+      if (hint) hint.remove();
+
+      if (dragSource === "palette") {
+        // 從左邊拉進來：複製新元素
+        const clone = draggingItem.cloneNode(true);
+        clone.classList.remove("dragging");
+        addWorkflowDragHandlers(clone); // 綁定右側專用事件
+
+        const afterElement = getDragAfterElement(workflowList, e.clientY);
+        if (afterElement == null) {
+          workflowList.appendChild(clone);
+        } else {
+          workflowList.insertBefore(clone, afterElement);
+        }
+      }
+      printCurrentWorkflow();
+    });
+
+    // --- 3. 實現「往左拉回刪除」的功能 ---
+    document.addEventListener("dragover", e => e.preventDefault()); 
+
+    document.addEventListener("drop", e => {
+      // 如果拖動來源是右側清單，且放下的位置不在 workflowList 內
+      if (dragSource === "workflow" && draggingItem && !workflowList.contains(e.target)) {
+        draggingItem.remove(); // 直接移除該元素
+        console.log("已從流程中移除項目");
+        printCurrentWorkflow();
+      }
+    });
+
+    // --- 4. 右側元素事件綁定 ---
+    function addWorkflowDragHandlers(item) {
+      item.addEventListener("dragstart", () => {
+        dragSource = "workflow";
+        draggingItem = item;
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        // 檢查拖拽結束時，如果不在 workflowList 內則移除 (保險做法)
+        if (dragSource === "workflow" && !workflowList.contains(item)) {
+          // item 已經在 drop 事件中被移除
+        }
+        draggingItem = null;
+        dragSource = null;
+      });
+
+      // 保留雙擊刪除作為備案
+      item.addEventListener("dblclick", () => {
+        item.remove();
+        printCurrentWorkflow();
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll(".step-item:not(.dragging)")];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function printCurrentWorkflow() {
+      const steps = [...workflowList.querySelectorAll(".step-item")]
+        .map(el => el.dataset.step);
+      console.log("當前執行流程:", steps);
+    }
+
+
+    // 1. 定義標準程序 (預設值)
+    const defaultPeanutWorkflow = [
+      { id: "get_spoon", name: "拿鏟子" },
+      { id: "spoon_peanuts", name: "鏟花生" },
+      { id: "drop_spoon", name: "放鏟子" }
+    ];
+
+    // 2. 更新主畫面預覽的函數
+    function refreshWorkflowPreview() {
+      const workflowList = document.getElementById("workflowList");
+      const previewContainer = document.getElementById("mainWorkflowPreview");
+      const runBtnText = document.querySelector("#runCustomBtn span");
+
+      if (!workflowList || !previewContainer) return;
+
+      const customSteps = [...workflowList.querySelectorAll(".step-item")];
+      let displayData = [];
+      let isCustom = customSteps.length > 0;
+
+      if (isCustom) {
+        displayData = customSteps.map(el => ({ name: el.textContent.trim() }));
+        if(runBtnText) runBtnText.textContent = "執行自定義流程";
+      } else {
+        displayData = defaultPeanutWorkflow;
+        if(runBtnText) runBtnText.textContent = "執行標準程序";
+      }
+
+      // 渲染標籤
+      previewContainer.innerHTML = displayData.map((step, index) => {
+        const arrow = index < displayData.length - 1 ? '<span style="opacity:0.3">→</span>' : '';
+        return `<div class="step-badge">${step.name}</div>${arrow}`;
+      }).join('');
+      
+      previewContainer.innerHTML += isCustom ? 
+        '<span class="default-tag" style="background:#AB47BC; color:#FFFFFF; border-color:#AB47BC;">自定義</span>' : 
+        '<span class="default-tag" style="background:#546E7A; color:#FFFFFF; border-color:#546E7A;">標準</span>';
+    }
+
+    // 3. 執行「標準」流程的快捷按鈕
+    function executeStandardWorkflow() {
+      const ids = defaultPeanutWorkflow.map(s => s.id);
+      setSystemMsg("系統訊息：啟動標準製作流程");
+      if (bridge && bridge.sendAction) {
+        bridge.sendAction(JSON.stringify(ids));
+      }
+    }
+
+    // 4. 執行「當前排定」流程的按鈕 (會判斷有沒有自定義)
+    function executeCurrentWorkflow() {
+      const workflowList = document.getElementById("workflowList");
+      const customSteps = [...workflowList.querySelectorAll(".step-item")];
+      
+      let finalIDs = [];
+      if (customSteps.length > 0) {
+        finalIDs = customSteps.map(el => el.dataset.step);
+        setSystemMsg("系統訊息：啟動自定義程序...");
+      } else {
+        finalIDs = defaultPeanutWorkflow.map(s => s.id);
+        setSystemMsg("系統訊息：啟動標準程序...");
+      }
+
+      if (bridge && bridge.sendAction) {
+        bridge.sendAction("run_workflow:" + JSON.stringify(finalIDs));
+      }
+    }
+
+    // 5. 修改你原本的 goMainPage，讓它回主頁時自動刷新預覽
+    function goMainPage() {
+      const main = document.getElementById("page-main");
+      const flow = document.getElementById("page-workflow");
+      if (main && flow) {
+        flow.classList.remove("active");
+        main.classList.add("active");
+        refreshWorkflowPreview(); // 加入這一行
+      }
+    }
+
+    // 6. 初始化也讀取一次
+    window.addEventListener("load", () => {
+      refreshWorkflowPreview();
+    });
+
+
+    window.addEventListener("load", initBridge);
+  </script>
+</body>
+</html>
