@@ -33,6 +33,7 @@ class main_window_ctrl(QMainWindow):
     tempChanged = Signal(float)
     grabbingSpoonChanged = Signal(bool)
     peanutStatusChanged = Signal(str)
+    leftTimeChanged = Signal(int)
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -42,6 +43,7 @@ class main_window_ctrl(QMainWindow):
         self.open_web_panel()
         
         self.statusChanged.connect(self.on_status_changed)
+        self.leftTimeChanged.connect(lambda t: self.ui.lineEdit_LeftTime.setText(str(t)))
         self.temp_timer = QTimer(self)
         self.temp_timer.timeout.connect(self._emit_temp)
         self.temp_timer.start(1000)  # 每 1 秒更新一次
@@ -125,67 +127,67 @@ class main_window_ctrl(QMainWindow):
                 try:
                     self.PeanutNumClassification_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]PeanutNumClassification_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]PeanutNumClassification_init error: {e}\n")
                     return
                 
             if 'self.GraspGenCommunication' not in globals():
                 try:
                     self.GraspGenCommunication_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]GraspGenCommunication_init error: {e}\n")
                     return
             
             if 'self.rosCommunication' not in globals():
                 try:
                     self.ros_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]ros_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]ros_init error: {e}\n")
                     return                     
 
             if 'self.wok' not in globals():
                 try:
                     self.wok_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]wok_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]wok_init error: {e}\n")
                     return  
 
             if 'self.tcp' not in globals():
                 try:
                     self.tcp_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]tcp_init error: {e}\n")
                     return  
 
             if 'self.tcp_thermal' not in globals():
                 try:
                     self.tcp_thermal_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp_thermal_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]tcp_thermal_init error: {e}\n")
                     return
                  
             if 'self.tcp_check_empty_cup' not in globals():
                 try:
                     self.tcp_check_empty_cup_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
                     return          
 
             if 'self.cam' not in globals():
                 try:
                     self.cam_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]cam_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]cam_init error: {e}\n")
                     return
 
             if 'self.tcp_check_waffle_lid' not in globals():
                 try:
                     self.tcp_check_waffle_lid_init()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
+                    self.statusChanged.emit(f"[ERROR]tcp_check_empty_cup_init error: {e}\n")
                     return        
                             
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]init error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]init error: {e}\n")
 
     #region init
     def tcp_init(self):
@@ -232,33 +234,33 @@ class main_window_ctrl(QMainWindow):
         try:
             self.peanutNumClassifier = PeanutNumClassification()  # Initialize the classifier
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]PeanutNumClassification_init error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]PeanutNumClassification_init error: {e}\n")
 
     def GraspGenCommunication_init(self):
         try:
             self.graspGenCommunication = GraspGenCommunication()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_init error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]GraspGenCommunication_init error: {e}\n")
 
     def GraspGenCommunication_destroy(self):
         try:
             self.graspGenCommunication.quit()
             print("GraspGenCommunication_destroy done.")
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_destroy error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]GraspGenCommunication_destroy error: {e}\n")
 
     def ros_init(self):        
         try:
             self.rosCommunication = ROSCommunication()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]ros_init error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]ros_init error: {e}\n")
 
     def ros_destroy(self):
         try:
             self.rosCommunication.quit()
             print("ros_destroy done.")
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]ros_destroy error: {e}\n") 
+            self.statusChanged.emit(f"[ERROR]ros_destroy error: {e}\n") 
     #endregion
 
     #region threading
@@ -266,7 +268,7 @@ class main_window_ctrl(QMainWindow):
         while self.serving_orders == True:
 
             self.tcp.left_time(self.current_order_left_seconds // 60, self.current_order_left_seconds % 60)
-            self.ui.lineEdit_LeftTime.setText(str(int(self.current_order_left_seconds))) 
+            self.leftTimeChanged.emit(int(self.current_order_left_seconds))
             if self.current_order_left_seconds > 0:
                 self.current_order_left_seconds -= 1
 
@@ -315,9 +317,9 @@ class main_window_ctrl(QMainWindow):
             # output = self.check_peanuts(save_image=True)
             output = self.check_peanuts_amount()
             # output = self.check_peanuts('PeanutNumberClassification/operating-sub.png') only use when debugging
-            self.ui.textEdit_status.append(f"[INFO]check_peanuts output: {output}\n")
+            self.statusChanged.emit(f"[INFO]check_peanuts output: {output}\n")
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]check_peanuts error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]check_peanuts error: {e}\n")
 
     def check_peanuts_amount(self, image_path=None, save_image = False):       
         try:
@@ -380,7 +382,7 @@ class main_window_ctrl(QMainWindow):
             press_button_time = (int)(self.ui.lineEdit_PressButtonTime.text())
             self.press_button_flow(press_button_time)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]press_button error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]press_button error: {e}\n")
 
     def press_button_flow(self, press_button_time: int | None = None):
         try:
@@ -404,7 +406,7 @@ class main_window_ctrl(QMainWindow):
             get_spoon_time = int(self.ui.lineEdit_GetSpoonTime.text())
             self.get_spoon_flow(get_spoon_time)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]get_spoon{e}\n")
+            self.statusChanged.emit(f"[ERROR]get_spoon{e}\n")
     
     def get_spoon_flow(self, get_spoon_time: int | None = None):
         try:
@@ -431,9 +433,9 @@ class main_window_ctrl(QMainWindow):
             #if peanuts_status == 'sufficient':
             self.spoon_single_peanuts()
             #else:
-            #    self.ui.textEdit_status.append(f"spoon_peanuts insufficient.")
+            #    self.statusChanged.emit(f"spoon_peanuts insufficient.")
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]spoon_peanuts error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]spoon_peanuts error: {e}\n")
 
     def spoon_single_peanuts(self):
         try:
@@ -563,7 +565,7 @@ class main_window_ctrl(QMainWindow):
             drop_spoon_time = int(self.ui.lineEdit_DropSpoonTime.text())
             self.drop_spoon_flow(drop_spoon_time)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]drop_spoon error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]drop_spoon error: {e}\n")
 
     def drop_spoon_flow(self,drop_spoon_time: int | None = None):
         try:
@@ -588,9 +590,9 @@ class main_window_ctrl(QMainWindow):
                 new_order = order(int(self.ui.lineEdit_NumOfPeanuts.text()), 0)
                 self.tcp.received_orders.put(new_order)
             else:
-                self.ui.textEdit_status.append(f"[WARNING]Num of Peanuts is empty.\n")      
+                self.statusChanged.emit(f"[WARNING]Num of Peanuts is empty.\n")      
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]Serve Peanuts error: {e}\n")    
+            self.statusChanged.emit(f"[ERROR]Serve Peanuts error: {e}\n")    
     #endregion
 
     #region waffle related
@@ -606,12 +608,12 @@ class main_window_ctrl(QMainWindow):
             state = self.tcp_check_waffle_lid.get_latest()
 
             if state.right_lid == LidPos.OPEN:
-                self.ui.textEdit_status.append(f"[INFO]1st Lid already opened.\n")
+                self.statusChanged.emit(f"[INFO]1st Lid already opened.\n")
                 return
 
             self.run_trajectory("ROS/trajectories/open_1st_lid.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]open_1st_lid error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]open_1st_lid error: {e}\n")
 
     def pushButton_Open2ndLid_clicked(self):
         try:
@@ -620,11 +622,11 @@ class main_window_ctrl(QMainWindow):
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
-                self.ui.textEdit_status.append(f"[INFO]2nd Lid already opened.\n")
+                self.statusChanged.emit(f"[INFO]2nd Lid already opened.\n")
                 return 
             self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]open_2nd_lid error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]open_2nd_lid error: {e}\n")
 
     def pushButton_Grab1stBatter_clicked(self):
         try:
@@ -637,7 +639,7 @@ class main_window_ctrl(QMainWindow):
     
             self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]grab_1st_batter error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]grab_1st_batter error: {e}\n")
 
     def pushButton_Grab2ndBatter_clicked(self):
         try:
@@ -648,7 +650,7 @@ class main_window_ctrl(QMainWindow):
                 self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
             self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]grab_2nd_batter error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]grab_2nd_batter error: {e}\n")
     def apply_offset(self,v):
         if v > 0:
             return 5 if v <= 1 else 10
@@ -674,10 +676,10 @@ class main_window_ctrl(QMainWindow):
             cartesian_pose[0] += self.apply_offset(self.suggest_1st_lid_x)
             cartesian_pose[1] += self.apply_offset(self.suggest_1st_lid_y)
             
-            self.ui.textEdit_status.append(f"certesian_pose:{cartesian_pose}\n")
+            self.statusChanged.emit(f"certesian_pose:{cartesian_pose}\n")
             self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]pour_1st_batter error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]pour_1st_batter error: {e}\n")
 
     def pushButton_Pour2ndBatter_clicked(self):
         try:
@@ -695,10 +697,10 @@ class main_window_ctrl(QMainWindow):
             time.sleep(3)
             cartesian_pose[0] += self.apply_offset(self.suggest_2nd_lid_x)
             cartesian_pose[1] += self.apply_offset(self.suggest_2nd_lid_y)
-            self.ui.textEdit_status.append(f"certesian_pose:{cartesian_pose}\n")
+            self.statusChanged.emit(f"certesian_pose:{cartesian_pose}\n")
             self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]pour_2nd_batter error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]pour_2nd_batter error: {e}\n")
 
     def pushButton_Drop1stBatter_clicked(self):
         try:
@@ -706,7 +708,7 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
             self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]drop_1st_batter error: {e}\n")    
+            self.statusChanged.emit(f"[ERROR]drop_1st_batter error: {e}\n")    
 
     def pushButton_Drop2ndBatter_clicked(self):
         try:
@@ -714,7 +716,7 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
             self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]drop_2nd_batter error: {e}\n")    
+            self.statusChanged.emit(f"[ERROR]drop_2nd_batter error: {e}\n")    
 
     def pushButton_Close1stLid_clicked(self):
         try:
@@ -722,15 +724,15 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
 
             state = self.tcp_check_waffle_lid.get_latest()
-            self.ui.textEdit_status.append(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
+            self.statusChanged.emit(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
 
             if state.right_lid == LidPos.CLOSED:
-                self.ui.textEdit_status.append(f"[INFO]1st Lid already closed.\n")
+                self.statusChanged.emit(f"[INFO]1st Lid already closed.\n")
                 return
             
             self.run_trajectory("ROS/trajectories/close_1st_lid.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]close_1st_lid error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]close_1st_lid error: {e}\n")
 
     def pushButton_Close2ndLid_clicked(self):
         try:
@@ -738,14 +740,14 @@ class main_window_ctrl(QMainWindow):
                 self.drop_spoon()
 
             state = self.tcp_check_waffle_lid.get_latest()
-            self.ui.textEdit_status.append(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
+            self.statusChanged.emit(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
             if state.left_lid == LidPos.CLOSED:
-                self.ui.textEdit_status.append(f"[INFO]2nd Lid already closed.\n")
+                self.statusChanged.emit(f"[INFO]2nd Lid already closed.\n")
                 return
 
             self.run_trajectory("ROS/trajectories/close_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]close_2nd_lid error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]close_2nd_lid error: {e}\n")
 
     def pushButton_GrabFork_clicked(self)-> bool:
         try:
@@ -754,25 +756,25 @@ class main_window_ctrl(QMainWindow):
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.right_waffle == WafflePos.ON_UPPER_LID:
-                self.ui.textEdit_status.append("[ERROR] Waffle on upper lid, abort opening.\n")
+                self.statusChanged.emit("[ERROR] Waffle on upper lid, abort opening.\n")
                 return False
             
             self.run_trajectory("ROS/trajectories/grab_fork.csv", vel=100, acc=500)
             self.grabbing_fork = True
             return True
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]grab_fork error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]grab_fork error: {e}\n")
 
     def wait_for_waffle_done(self):
         state = self.tcp_check_waffle_lid.get_latest()
-        self.ui.textEdit_status.append(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
+        self.statusChanged.emit(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
         if state.suggest_rdx is not None and state.suggest_rdy is not None:
             self.suggest_1st_lid_x = state.suggest_rdx
             self.suggest_1st_lid_y = state.suggest_rdy
         if state.suggest_ldx is not None and state.suggest_ldy is not None:
             self.suggest_2nd_lid_x = state.suggest_ldx
             self.suggest_2nd_lid_y = state.suggest_ldy
-        self.ui.textEdit_status.append(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
+        self.statusChanged.emit(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
         wait_time = (int)(self.ui.lineEdit_WaitForWaffleTime.text())
         time.sleep(wait_time)
 
@@ -788,7 +790,7 @@ class main_window_ctrl(QMainWindow):
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
                 if state.left_waffle == WafflePos.ON_UPPER_LID or state.left_waffle == WafflePos.ON_LOWER_LID:
-                    self.ui.textEdit_status.append(f"[INFO]2nd lid already open and have waffle. Don't need to drop the fork.\n")
+                    self.statusChanged.emit(f"[INFO]2nd lid already open and have waffle. Don't need to drop the fork.\n")
                     return
                 else:
                     self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
@@ -797,7 +799,7 @@ class main_window_ctrl(QMainWindow):
                 self.run_trajectory("ROS/trajectories/drop_fork.csv", vel=100, acc=500)
                 self.grabbing_fork = False
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]drop_fork error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]drop_fork error: {e}\n")
 
     def pushButton_Get1stWaffle_clicked(self):
         try:
@@ -806,7 +808,7 @@ class main_window_ctrl(QMainWindow):
 
             self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=50, acc=500, blend=80)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]get_1st_waffle error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]get_1st_waffle error: {e}\n")
 
     def pushButton_Get2ndWaffle_clicked(self):
         try:
@@ -815,13 +817,13 @@ class main_window_ctrl(QMainWindow):
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_waffle == WafflePos.ON_UPPER_LID:
-                self.ui.textEdit_status.append(f"[INFO]2nd waffle on upper lid. RUN Get 2nd Waffle on Top Lid.\n")
+                self.statusChanged.emit(f"[INFO]2nd waffle on upper lid. RUN Get 2nd Waffle on Top Lid.\n")
                 self.run_trajectory("ROS/trajectories/get_2nd_waffle_top_lid.csv", vel=35, acc=500, blend=100)
             else:
                 self.run_trajectory("ROS/trajectories/get_2nd_waffle.csv", vel=35, acc=500, blend=80)
 
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]get_2nd_waffle error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]get_2nd_waffle error: {e}\n")
 
     def pushButton_DropWaffle_clicked(self):
         try:
@@ -830,7 +832,7 @@ class main_window_ctrl(QMainWindow):
 
             self.run_trajectory("ROS/trajectories/drop_waffle.csv", vel=40, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]drop_waffle error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]drop_waffle error: {e}\n")
 
     def pushButton_GoToDefault_clicked(self):
         try:
@@ -839,7 +841,7 @@ class main_window_ctrl(QMainWindow):
 
             self.run_trajectory("ROS/trajectories/go_to_default.csv", vel=100, acc=500)
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]go_to_default error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]go_to_default error: {e}\n")
 
     def pushButton_ServeWaffle_clicked(self):
         try:
@@ -847,9 +849,9 @@ class main_window_ctrl(QMainWindow):
                 new_order = order(0, int(self.ui.lineEdit_NumOfWaffle.text()))
                 self.tcp.received_orders.put(new_order)
             else:
-                self.ui.textEdit_status.append(f"[WARNING]Num of Waffle is empty.\n")      
+                self.statusChanged.emit(f"[WARNING]Num of Waffle is empty.\n")      
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]Serve Waffle error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]Serve Waffle error: {e}\n")
 
     def cook_1st_stove(self):
         self.pushButton_Open1stLid_clicked()
@@ -870,7 +872,7 @@ class main_window_ctrl(QMainWindow):
     def serve_1st_stove(self):
         self.pushButton_Open1stLid_clicked()
         if not self.pushButton_GrabFork_clicked():
-            self.ui.textEdit_status.append("[INFO] Abort at grab fork, cause waffle is on the upper lid.\n")
+            self.statusChanged.emit("[INFO] Abort at grab fork, cause waffle is on the upper lid.\n")
             return
         self.wait_for_waffle_done()
         self.pushButton_Get1stWaffle_clicked()
@@ -892,19 +894,19 @@ class main_window_ctrl(QMainWindow):
             if self.ui.lineEdit_NumOfWaffle.text():
                 num_waffle = int(self.ui.lineEdit_NumOfWaffle.text())
             else:
-                self.ui.textEdit_status.append(f"[WARNING]Num of Waffle is empty.\n")   
+                self.statusChanged.emit(f"[WARNING]Num of Waffle is empty.\n")   
                 return
 
             if self.ui.lineEdit_NumOfPeanuts.text():
                 num_peanuts = int(self.ui.lineEdit_NumOfPeanuts.text())
             else:
-                self.ui.textEdit_status.append(f"[WARNING]Num of Peanuts is empty.\n")  
+                self.statusChanged.emit(f"[WARNING]Num of Peanuts is empty.\n")  
                 return
 
             new_order = order(num_peanuts, num_waffle)
             self.tcp.received_orders.put(new_order)   
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]Serve Waffle error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]Serve Waffle error: {e}\n")
     #endregion
 
     #region serving orders
@@ -915,9 +917,7 @@ class main_window_ctrl(QMainWindow):
 
             try:
                 order = self.tcp.received_orders.get()
-                print(f"{order}, {order.peanuts_num}, {order.waffle_num}")
-                self.ui.textEdit_status.append(f"[INFO]Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
-                print("log appended")
+                self.statusChanged.emit(f"[INFO]Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
                 if order.waffle_num <= self.num_left_waffle:
                     self.num_left_waffle -= order.waffle_num
                     order.waffle_num = 0
@@ -930,30 +930,30 @@ class main_window_ctrl(QMainWindow):
                 try:
                     self.tcp.send_time(self.current_order_left_seconds // 60, self.current_order_left_seconds % 60)
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp send_time failed.\n")
+                    self.statusChanged.emit(f"[ERROR]tcp send_time failed.\n")
 
                 if self.serving_orders == False:
                     break
 
                 self.serve_both(order.waffle_num, order.peanuts_num)
 
-                self.ui.textEdit_status.append(f"[INFO]Serve order done.\n")
-                self.ui.textEdit_status.append(f"[INFO]Number of left waffle: {self.num_left_waffle}.\n")
+                self.statusChanged.emit(f"[INFO]Serve order done.\n")
+                self.statusChanged.emit(f"[INFO]Number of left waffle: {self.num_left_waffle}.\n")
                 self.current_order_left_seconds = 0   
 
                 try:              
                     self.tcp.send_end()
                 except Exception as e:
-                    self.ui.textEdit_status.append(f"[ERROR]tcp send_end failed.\n")
+                    self.statusChanged.emit(f"[ERROR]tcp send_end failed.\n")
 
             except ValueError as e:
                 print(e)
-                self.ui.textEdit_status.append(f"[ERROR]Clearing all remaining tasks.\n")
+                self.statusChanged.emit(f"[ERROR]Clearing all remaining tasks.\n")
                 while not self.tcp.received_orders.empty():
                     self.tcp.received_orders.get()
                 continue
             except Exception as e:
-                self.ui.textEdit_status.append(f"[ERROR]serve_orders error: {e}\n")
+                self.statusChanged.emit(f"[ERROR]serve_orders error: {e}\n")
 
     def serve_both(self, num_waffle, num_peanuts):
         try:
@@ -965,7 +965,7 @@ class main_window_ctrl(QMainWindow):
                 cook_waffle = True
 
             if cook_waffle == True:
-                self.ui.textEdit_status.append(f"[INFO]Cooking waffle...\n") 
+                self.statusChanged.emit(f"[INFO]Cooking waffle...\n") 
                 if num_waffle - self.num_left_waffle > 4:
                     use_2nd_stove = True                
                 else:
@@ -974,12 +974,12 @@ class main_window_ctrl(QMainWindow):
                 # turn on waffle machine
                 self.wok.AC(1)
                 
-                self.ui.textEdit_status.append(f"[INFO]Use 1st stove.\n")
+                self.statusChanged.emit(f"[INFO]Use 1st stove.\n")
                 self.cook_1st_stove()
                 self.waffle_first_stove_start_time = time.time()
 
                 if use_2nd_stove == True:
-                    self.ui.textEdit_status.append(f"[INFO]Use 2nd stove.\n")
+                    self.statusChanged.emit(f"[INFO]Use 2nd stove.\n")
                     self.cook_2nd_stove()
                     second_start_time = time.time()
 
@@ -989,7 +989,7 @@ class main_window_ctrl(QMainWindow):
                 while peanuts_spooned_count <= num_peanuts:
                     done = self.spoon_peanuts()
                     if done == 1:
-                        self.ui.textEdit_status.append(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
+                        self.statusChanged.emit(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
                         peanuts_spooned_count += 1                
                     else: # if peanuts is reprocessing or reheating, back to waffle first
                         break
@@ -1010,14 +1010,14 @@ class main_window_ctrl(QMainWindow):
                 if self.grabbing_spoon == True:
                     self.drop_spoon()
 
-                self.ui.textEdit_status.append(f"[INFO]Serving first stove...\n")
+                self.statusChanged.emit(f"[INFO]Serving first stove...\n")
                 self.serve_1st_stove()
 
                 if use_2nd_stove == True:
                     while time.time() - second_start_time < self.time_waffle_heat:
                         time.sleep(0.01)
                     self.wok.AC(1)       
-                    self.ui.textEdit_status.append(f"[INFO]Serving second stove...\n")
+                    self.statusChanged.emit(f"[INFO]Serving second stove...\n")
                     self.serve_2nd_stove()
                     self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
                 else:
@@ -1031,7 +1031,7 @@ class main_window_ctrl(QMainWindow):
             # back to peanuts when waffle is done
             while peanuts_spooned_count <= num_peanuts:
                 self.spoon_peanuts()
-                self.ui.textEdit_status.append(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
+                self.statusChanged.emit(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
                 peanuts_spooned_count += 1
         except Exception as e:
             raise e
@@ -1250,25 +1250,25 @@ class main_window_ctrl(QMainWindow):
         
     def pushButton_CheckTemperature_clicked(self):
         if self.tcp_thermal:
-            self.ui.textEdit_status.append(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")             
+            self.statusChanged.emit(f"[INFO]Current Temperature: {self.tcp_thermal.get_cur_temp()}\n")             
 
     def lineEdit_PeanutsHeatingTime_textChanged(self):
         try:
             self.time_peanut_heat = (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]lineEdit_PeanutsHeatingTime_textChanged error: {e}.\n") 
+            self.statusChanged.emit(f"[ERROR]lineEdit_PeanutsHeatingTime_textChanged error: {e}.\n") 
 
     def lineEdit_ThermalThreshold_textChanged(self):
         try:
             self.thermal_threshold = (int)(self.ui.lineEdit_ThermalThreshold.text())
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]lineEdit_ThermalThreshold_textChanged error: {e}.\n") 
+            self.statusChanged.emit(f"[ERROR]lineEdit_ThermalThreshold_textChanged error: {e}.\n") 
 
     def lineEdit_WaffleHeatingTime_textChanged(self):
         try:
             self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]lineEdit_WaffleHeatingTime_textChanged error: {e}.\n") 
+            self.statusChanged.emit(f"[ERROR]lineEdit_WaffleHeatingTime_textChanged error: {e}.\n") 
 
     def pushButton_SaveParameters_clicked(self):
         try:            
@@ -1304,7 +1304,7 @@ class main_window_ctrl(QMainWindow):
                 json.dump(parameters, file, indent=4)
 
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]pushButton_SaveParameters_clicked error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]pushButton_SaveParameters_clicked error: {e}\n")
     #endregion
 
     def closeEvent(self, event: QCloseEvent):
@@ -1312,43 +1312,43 @@ class main_window_ctrl(QMainWindow):
             if self.cam:
                 self.cam.quit()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]cam.quit error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]cam.quit error: {e}\n")
 
         try:
             if self.graspGenCommunication:
                 self.GraspGenCommunication_destroy()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]GraspGenCommunication_destroy error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]GraspGenCommunication_destroy error: {e}\n")
 
         try:
             if self.rosCommunication:
                 self.ros_destroy()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]ros_destroy error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]ros_destroy error: {e}\n")
 
         try:
             if self.tcp:
                 self.tcp.close()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]tcp.close error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]tcp.close error: {e}\n")
 
         try:
             if self.tcp_thermal:
                 self.tcp_thermal.close()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]tcp_thermal.close error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]tcp_thermal.close error: {e}\n")
 
         try:
             if self.tcp_check_empty_cup:
                 self.tcp_check_empty_cup.close()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]tcp_check_empty_cup.close error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]tcp_check_empty_cup.close error: {e}\n")
 
         try:
             if self.tcp_check_waffle_lid:
                 self.tcp_check_waffle_lid.close()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]tcp_check_waffle_lid.close error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]tcp_check_waffle_lid.close error: {e}\n")
 
         self.serving_orders = False
 
@@ -1356,19 +1356,19 @@ class main_window_ctrl(QMainWindow):
             if self.thread_pan_position_check:
                 self.thread_pan_position_check.join()
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]thread_pan_position_check join error: {e}\n")
+            self.statusChanged.emit(f"[ERROR]thread_pan_position_check join error: {e}\n")
 
         try:
             if self.thread_processing_orders:    
                 self.thread_processing_orders.join()    
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]thread_processing_orders join error: {e}\n")        
+            self.statusChanged.emit(f"[ERROR]thread_processing_orders join error: {e}\n")        
 
         try:
             if self.thread_counting_left_time:
                 self.thread_counting_left_time.join()  
         except Exception as e:
-            self.ui.textEdit_status.append(f"[ERROR]thread_counting_left_time join error: {e}\n")  
+            self.statusChanged.emit(f"[ERROR]thread_counting_left_time join error: {e}\n")  
     def open_web_panel(self):
         if not hasattr(self, "_web_panel"):
             self._web_panel = WebPanel(self)
