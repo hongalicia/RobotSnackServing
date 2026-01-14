@@ -6,6 +6,7 @@ class WebBridge(QObject):
     tempChanged = Signal(float)
     grabbingSpoonChanged = Signal(bool)
     peanutStatusChanged = Signal(str)
+    receiveOrder = Signal(str)
     def __init__(self, main_ctrl):
         super().__init__()
         self.ctrl = main_ctrl
@@ -15,7 +16,7 @@ class WebBridge(QObject):
         self.ctrl.tempChanged.connect(self.tempChanged.emit)
         self.ctrl.grabbingSpoonChanged.connect(self.grabbingSpoonChanged.emit)
         self.ctrl.peanutStatusChanged.connect(self.peanutStatusChanged.emit)
-
+        self.ctrl.receiveOrder.connect(lambda msg: self.receiveOrder.emit(str(msg)))
 
 
     @Slot(str)
@@ -35,9 +36,43 @@ class WebBridge(QObject):
                 return self.ctrl.spoon_peanuts_flow
             elif act_name == "serve_peanuts":
                 return lambda: self.ctrl.serve_peanuts(1)
+            elif act_name == "serve_waffle":
+                return lambda: self.ctrl.serve_waffle(4)
             elif act_name == "refill_peanut":
                 return self.ctrl.grasp_and_dump_peanuts_flow
-            return None
+            elif act_name == "pan_heat":
+                return self.ctrl.pan_heat
+            elif act_name == "Grab1stBatter":
+                return self.ctrl.Grab1stBatter_flow
+            elif act_name == "Pour1stBatter":
+                return self.ctrl.Pour1stBatter_flow
+            elif act_name == "Drop1stBatter":
+                return self.ctrl.Drop1stBatter_flow
+            elif act_name == "Grab2ndBatter":
+                return self.ctrl.Grab2ndBatter_flow
+            elif act_name == "Pour2ndBatter":
+                return self.ctrl.Pour2ndBatter_flow
+            elif act_name == "Drop2ndBatter":
+                return self.ctrl.Drop2ndBatter_flow
+            elif act_name == "GrabFork":
+                return self.ctrl.GrabFork_flow
+            elif act_name == "Open1stLid":
+                return self.ctrl.Open1stLid_flow
+            elif act_name == "Close1stLid":
+                return self.ctrl.Close1stLid_flow
+            elif act_name == "Open2ndLid":
+                return self.ctrl.Open2ndLid_flow
+            elif act_name == "Close2ndLid":
+                return self.ctrl.Close2ndLid_flow
+            elif act_name == "WaitWaffle":
+                return self.ctrl.wait_for_waffle_pour
+            elif act_name == "serve_1st_stove":
+                return self.ctrl.serve_1st_stove_flow
+            elif act_name == "serve_2nd_stove":
+                return self.ctrl.serve_2nd_stove_flow
+            else:
+                return None
+
 
         # 判定是「單一動作」還是「自定義流程」
         if action.startswith("run_workflow:"):
@@ -47,13 +82,31 @@ class WebBridge(QObject):
                 
                 # 定義一個組合函式，依序執行所有動作
                 def workflow_executor():
-                    for act in action_list:
-                        func_to_run = get_target_func(act)
-                        if func_to_run:
-                            print(f"[WebBridge] 執行流程步驟: {act}")
-                            func_to_run() # 執行該步驟 (需確保此動作是阻塞的，否則會同時執行)
-                        else:
-                            print(f"[WebBridge] 流程中包含未知動作: {act}")
+                    self.statusChanged.emit("系統訊息：啟動自定義程序")
+
+                    for step in action_list:
+
+                        # -------- 一般 step（字串）--------
+                        if isinstance(step, str):
+                            func_to_run = get_target_func(step)
+                            if func_to_run:
+                                print(f"[WebBridge] 執行流程步驟: {step}")
+                                func_to_run()
+                            else:
+                                print(f"[WebBridge] 未知流程步驟: {step}")
+
+                        # -------- 參數 step（dict）--------
+                        elif isinstance(step, dict):
+                            step_name = step.get("step")
+
+                            if step_name == "WaitSeconds":
+                                seconds = step.get("seconds", 0)
+                                self.statusChanged.emit(f"[INFO] ⏱ 等待 {seconds} 秒")
+                                self.ctrl.wait_time(seconds)
+                            else:
+                                print(f"[WebBridge] 未知參數流程: {step}")
+
+                    self.statusChanged.emit("系統訊息：完成自定義程序")
                 
                 final_func = workflow_executor
             except Exception as e:

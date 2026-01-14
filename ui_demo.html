@@ -8,8 +8,8 @@
   <!-- Qt WebChannel（一定要有） -->
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
 
-  <style>
-    /* --- 全局設定 --- */
+<style>
+    /* --- 全局設定：馬卡龍 Tiffany 色系 --- */
     body, html {
       margin: 0;
       padding: 0;
@@ -17,7 +17,7 @@
       height: 100%;
       font-family: "Microsoft JhengHei", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden;
-      background-color: #121212;
+      background-color: #F0F4F5; /* 背景換成淺亮色以襯托馬卡龍感 */
     }
     .page {
       width: 100%;
@@ -30,24 +30,25 @@
     }
     .main-container {
       display: flex;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
     }
 
     /* --- 左側：Isaac Sim 畫面 --- */
     .sim-view {
       flex: 3;
-      background-color: #000;
+      background-color: #000000; 
       position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
-      border-right: 2px solid #0288D1;
+      border-right: 2px solid #81D8D0; /* Tiffany 綠邊框 */
     }
+    
     .sim-placeholder-text {
-      color: #4FC3F7;
+      color: #81D8D0;
       text-align: center;
-      opacity: 0.7;
+      opacity: 0.9;
     }
     .sim-placeholder-text h2 { margin: 0; font-size: 24px; }
     .sim-placeholder-text p { margin-top: 10px; font-size: 14px; }
@@ -55,19 +56,20 @@
     /* --- 右側：UI 面板 --- */
     .ui-panel {
       flex: 1;
+      width: 100%;
       min-width: 320px;
-      background: linear-gradient(180deg, #4FC3F7 0%, #0288D1 100%);
+      background: linear-gradient(180deg, #A2E4DD 0%, #81D8D0 100%);
       display: flex;
       flex-direction: column;
       padding: 15px;
       box-sizing: border-box;
-      box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+      box-shadow: -5px 0 15px rgba(0,0,0,0.1);
     }
 
-    /* --- 通用卡片 --- */
+
     .card {
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.5);
       border-radius: 12px;
       padding: 10px;
       margin-bottom: 12px;
@@ -76,23 +78,22 @@
 
     /* --- 0. 頂部控制列 --- */
     .top-control-bar .btn {
-      min-width: 100px; 
+      min-width: 140px; 
       height: 55px; 
-      font-size: 16px;
-      padding: 0 15px;
+      font-size: 20px;
+      padding: 0 10px;
       margin-right: 10px;
     }
 
-    /* 為了讓頂部按鈕整齊，調整控制列的 padding 不要太誇張 */
     .top-control-bar {
       display: flex;
-      justify-content: center; /* 改成靠左排列，這樣按鈕會連在一起 */
+      justify-content: center; 
       align-items: center;
-      padding: 15px 20px; /* 縮小上下間距，讓它不要佔據太多高度 */
+      padding: 15px 20px; 
     }
     .mode-group {
       display: flex;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.1);
       padding: 4px;
       border-radius: 8px;
       gap: 2px;
@@ -100,7 +101,7 @@
     .mode-btn {
       background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.6);
+      color: #555;
       padding: 8px 16px;
       border-radius: 6px;
       font-size: 14px;
@@ -109,19 +110,19 @@
       transition: all 0.3s;
     }
     .mode-btn.active {
-      background-color: #01579B;
-      color: #FFF;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      background-color: #FFFFFF;
+      color: #4AAEA4; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .mode-btn:hover:not(.active) {
-      color: #FFF;
-      background-color: rgba(255,255,255,0.1);
+      color: #333;
+      background-color: rgba(255,255,255,0.2);
     }
 
     .settings-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: #444;
       padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
@@ -132,21 +133,21 @@
       gap: 5px;
     }
     .settings-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.5);
     }
 
     /* --- 1. 訊息欄位 --- */
     .message-bar {
-      background: rgba(1, 87, 155, 0.8);
-      color: #fff;
+      background: #FEF9C3; /* 馬卡龍黃 */
+      color: #857A1D;
       min-height: 50px;
       display: flex;
       align-items: center;
       padding: 10px 15px;
-      border-left: 5px solid #FFD600;
-      font-size: 14px;
+      border-left: 5px solid #FDE047;
+      font-size: 18px;
       line-height: 1.4;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
     .msg-icon { margin-right: 10px; font-size: 20px; }
 
@@ -158,43 +159,46 @@
     }
     .status-row {
       display: flex;
-      justify-content: space-between;
+      gap: 10px;
       align-items: center;
-      background: rgba(255, 245, 157, 0.25);
-      border: 1px solid rgba(255, 241, 118, 0.4);
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.5);
       padding: 8px 12px;
       border-radius: 8px;
+      width: 160px;
+      justify-content: space-between;
     }
     .status-label {
-      color: #FFFDE7;
+      white-space: nowrap;       /* 防止文字換行 */
+      flex-shrink: 0;            /* 確保文字不會被壓扁 */
+      color: #444;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 16px;
       display: flex;
       align-items: center;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
     .status-icon { margin-right: 8px; font-size: 16px; }
 
     .status-indicator {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       font-size: 12px;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(255, 255, 255, 0.5);
       padding: 4px 8px;
       border-radius: 20px;
-      color: white;
+      color: #555;
+      flex-shrink: 0;
     }
     .dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       margin-right: 6px;
-      background-color: #ccc;
     }
-    .dot.green { background-color: #00E676; box-shadow: 0 0 5px #00E676; }
-    .dot.red { background-color: #FF1744; box-shadow: 0 0 5px #FF1744; }
-    .dot.yellow { background-color: #FFD600; box-shadow: 0 0 5px #FFD600; }
-    .dot.gray { background-color: #B0BEC5; }
+    .dot.green { background-color: #A7F3D0; box-shadow: 0 0 5px #A7F3D0; }
+    .dot.red { background-color: #FDA4AF; box-shadow: 0 0 5px #FDA4AF; }
+    .dot.yellow { background-color: #FDE68A; box-shadow: 0 0 5px #FDE68A; }
+    .dot.gray { background-color: #E5E7EB; }
 
     /* --- 3. 動作欄位 --- */
     .action-section {
@@ -214,8 +218,8 @@
     .btn {
       border: none;
       border-radius: 8px;
-      padding: 15px 5px;
-      font-size: 14px;
+      padding: 10px 5px;
+      font-size: 18px;
       font-weight: bold;
       color: white;
       cursor: pointer;
@@ -224,32 +228,29 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+      text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
     }
     .btn i { font-size: 20px; margin-bottom: 5px; font-style: normal;}
     .btn:active { transform: translateY(4px); box-shadow: none; }
 
-    .btn-blue { background: linear-gradient(to bottom, #29B6F6, #0288D1); }
-    .btn-blue:hover { background: linear-gradient(to bottom, #4FC3F7, #039BE5); }
-    .btn-orange { background: linear-gradient(to bottom, #FF7043, #D84315); }
-    .btn-orange:hover { background: linear-gradient(to bottom, #FF8A65, #E64A19); }
-    .btn-green { background: linear-gradient(to bottom, #66BB6A, #2E7D32); }
-    .btn-green:hover { background: linear-gradient(to bottom, #81C784, #388E3C); }
-    .btn-purple { background: linear-gradient(to bottom, #AB47BC, #7B1FA2); }
-    .btn-purple:hover { background: linear-gradient(to bottom, #BA68C8, #8E24AA); }
-    .btn-secondary {background: rgba(255,255,255,0.25);color: white;}
+    /* 按鈕顏色：馬卡龍色系 */
+    .btn-blue { background: #BAE6FD; color: #0369A1; }
+    .btn-orange { background: #FFCFB3; color: #9A3412; }
+    .btn-green { background: #C1E1C1; color: #166534; }
+    .btn-purple { background: #E9D5FF; color: #6B21A8; }
+    .btn-secondary {background: rgba(255,255,255,0.4); color: #666;}
 
     .section-title {
       font-size: 15px;
-      color: rgba(255,255,255,0.7);
+      color: #555;
       margin: 5px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
       padding-bottom: 2px;
     }
 
     .workflow-editor {
-      display: flex;
+      display: flex; /* 確保左右並排 */
       gap: 20px;
       margin-top: 20px;
       height: calc(100% - 120px);
@@ -257,12 +258,12 @@
 
     .workflow-panel {
       flex: 1;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.25);
       border-radius: 12px;
       padding: 12px;
       display: flex;
       flex-direction: column;
-      color: white;
+      color: #444;
     }
 
     .palette,
@@ -275,58 +276,275 @@
     }
 
     .step-item {
-      background: rgba(255,255,255,0.25);
+      background: #FFFFFF;
+      color: #0369A1;
       padding: 12px;
       border-radius: 8px;
       cursor: grab;
       user-select: none;
       font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+
+    .step-item.step-peanut {
+      background: linear-gradient(135deg, #FFE082, #FFCA28);
+      color: #5D4037;
+      border: 2px solid #FFB300;
+    }
+
+    .step-item.step-waffle {
+      background: linear-gradient(135deg, #BBDEFB, #90CAF9);
+      color: #0D47A1;
+      border: 2px solid #64B5F6;
+    }
+
 
     .step-item.dragging {
       opacity: 0.5;
     }
 
     .workflow-list {
-      border: 2px dashed rgba(255,255,255,0.3);
+      border: 2px dashed rgba(255,255,255,0.6);
       padding: 10px;
       border-radius: 8px;
     }
 
     .hint {
-      opacity: 0.5;
+      opacity: 0.6;
       font-style: italic;
     }
 
     .step-badge {
-      background: rgba(79, 195, 247, 0.2);
-      border: 1px solid #4FC3F7;
-      color: #FFF;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid #81D8D0;
+      color: #4AAEA4;
       padding: 4px 10px;
       border-radius: 4px;
       font-size: 12px;
     }
     .default-tag {
-      background: rgba(255, 214, 0, 0.2);
-      border: 1px solid #FFD600;
-      color: #FFD600;
+      background: #FEF9C3;
+      border: 1px solid #FDE047;
+      color: #857A1D;
       font-size: 10px;
       padding: 2px 6px;
       border-radius: 4px;
       margin-left: auto;
     }
+    /* 彈窗遮罩 */
+    .modal-overlay {
+      display: none; /* 預設隱藏 */
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 彈窗主體 */
+    .modal-card {
+      background: #FFFFFF;
+      width: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: modalShow 0.3s ease-out;
+    }
+
+    @keyframes modalShow {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      background: #81D8D0; /* Tiffany 綠 */
+      color: #FFF;
+      padding: 15px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .modal-body {
+      padding: 20px;
+      color: #555;
+    }
+
+    .modal-body input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      box-sizing: border-box;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .modal-body input:focus {
+      border-color: #81D8D0;
+    }
+
+    .color-presets {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+
+    .color-chip {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: 0.2s;
+    }
+
+    .color-chip:hover {
+      transform: scale(1.2);
+      border-color: #81D8D0;
+    }
+
+    .modal-footer {
+      display: flex;
+      border-top: 1px solid #EEE;
+    }
+
+    .modal-btn {
+      flex: 1;
+      border: none;
+      padding: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .modal-btn.cancel { background: #F5F5F5; color: #888; }
+    .modal-btn.cancel:hover { background: #EEE; }
+
+    .modal-btn.confirm { background: #81D8D0; color: #FFF; }
+    .modal-btn.confirm:hover { background: #6ec4bc; }
+
+    .card::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .card::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.4);
+      border-radius: 4px;
+    }
+
+    .card::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .module-item {
+        background: #F3E5F5 !important; /* 淺紫色背景 */
+        border: 1.5px solid #CE93D8 !important;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start !important;
+        padding: 10px 15px !important;
+    }
+
+    .module-title {
+        color: #6B21A8;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .step-item.param-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-item .step-param-input {
+      width: 60px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.2);
+      font-size: 13px;
+    }
+    .status-row-group {
+      display: flex;
+      gap: 20px;           /* 兩個框框中間的距離 */
+      flex-wrap: wrap;     /* 螢幕小時自動換行 */
+      align-items: center;
+    }
+
+    /* 彈窗遮罩層 */
+    .modal-overlay {
+      display: none; /* 預設隱藏 */
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px); /* 背景模糊感 */
+    }
+
+    /* 彈窗主體 */
+    .modal-content {
+      background: #2c2c2e; /* 配合深色主題 */
+      padding: 20px;
+      border-radius: 15px;
+      width: 300px;
+      border: 1px solid #81D8D0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    .close-btn {
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .modal-body .btn {
+      width: 100%; /* 按鈕在彈窗內滿寬 */
+      padding: 15px;
+      font-size: 16px;
+    }
+
   </style>
 </head>
 
 <body>
   <div id="page-main" class="page active">
     <div class="main-container">
-      <div class="sim-view" id="simView">
-        <div class="sim-placeholder-text">
-          <h2>ISAAC SIM STREAM</h2>
-          <p>WebRTC 影像流顯示區域</p>
-        </div>
+      <div class="sim-view">
+        <img
+          id="mainStream"
+          src="http://127.0.0.1:5000/video_feed_usb"
+          style="
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: black;
+          "
+          alt="Camera Stream"
+        />
       </div>
+
 
       <div class="ui-panel">
         <div class="top-control-bar">
@@ -342,60 +560,114 @@
 
         <div class="card status-section">
           <div class="section-title">設備監控</div>
-          <div class="status-row">
-            <span class="status-label"><span class="status-icon">🥜</span>花生存量</span>
-            <div class="status-indicator">
-              <span class="dot green" id="peanutDot"></span>
-              <span id="peanutText">充足</span>
+
+          <div class="status-row-group">
+            <div class="status-row status-row-compact-width">
+              <span class="status-label">
+                <span class="status-icon">🥜</span>花生存量
+              </span>
+              <div class="status-indicator">
+                <span class="dot green" id="peanutDot"></span>
+                <span id="peanutText">充足</span>
+              </div>
+            </div>
+            <div class="status-row status-row-compact-width" onclick="switchCamera('rtsp1')" style="cursor: pointer;">
+              <span class="status-label">
+                <span class="status-icon">📷</span>cam1
+              </span>
+              <div class="status-indicator">
+                <span class="dot green"></span>
+                <span>連線</span>
+              </div>
             </div>
           </div>
-          <div class="status-row">
-            <span class="status-label"><span class="status-icon">🥄</span>鏟子狀態</span>
-            <div class="status-indicator">
-              <span class="dot gray" id="shovelDot"></span>
-              <span id="shovelText">閒置</span>
+          
+          <div class="status-row-group">
+            <div class="status-row status-row-compact-width">
+              <span class="status-label">
+                <span class="status-icon">🥄</span>鏟子狀態
+              </span>
+              <div class="status-indicator">
+                <span class="dot gray" id="shovelDot"></span>
+                <span id="shovelText">閒置</span>
+              </div>
+            </div>
+
+            <div class="status-row status-row-compact-width" onclick="switchCamera('video_feed_usb')" style="cursor: pointer;">
+              <span class="status-label">
+                <span class="status-icon">📷</span>cam2
+              </span>
+              <div class="status-indicator">
+                <span class="dot green"></span>
+                <span>連線</span>
+              </div>
             </div>
           </div>
-          <div class="status-row">
-            <span class="status-label"><span class="status-icon"></span>🧇鬆餅機</span>
-            <div class="status-indicator">
-              <span class="dot green" id="waffleDot"></span>
-              <span id="waffleText">就緒</span>
+
+          <div class="status-row-group">
+            <div class="status-row status-row-compact-width">
+              <span class="status-label">
+                <span class="status-icon">🧇</span>鬆餅機
+              </span>
+              <div class="status-indicator">
+                <span class="dot green" id="waffleDot"></span>
+                <span id="waffleText">就緒</span>
+              </div>
+            </div>
+
+            <div class="status-row status-row-compact-width" onclick="switchCamera('video_feed_usb')" style="cursor: pointer;">
+              <span class="status-label">
+                <span class="status-icon">📷</span>cam3
+              </span>
+              <div class="status-indicator">
+                <span class="dot green"></span>
+                <span>連線</span>
+              </div>
             </div>
           </div>
           <div class="status-row">
             <span class="status-label"><span class="status-icon">🔥</span>加熱溫度</span>
             <div class="status-indicator">
               <span class="dot yellow" id="heatDot"></span>
-              <span id="heatText">180°C (恆溫)</span>
+              <span id="heatText">36°C</span>
             </div>
           </div>
         </div>
 
         <div class="action-section">
-          <div class="section-title">原料操作</div>
+          <!-- <div class="section-title">原料操作</div>
           <div class="action-grid">
-            <button class="btn btn-purple" onclick="sendAction('refill_peanut')"><i>📥</i>補充花生</button>
-            <button class="btn btn-blue" onclick="sendAction('get_spoon')"><i>⬇️</i>拿鏟子</button>
-            <button class="btn btn-blue" onclick="sendAction('spoon_peanuts')"><i>🥄</i>鏟花生</button>
-            <button class="btn btn-blue" onclick="sendAction('drop_spoon')"><i>🔄</i>放鏟子</button>
-          </div>
+            <button class="btn btn-purple" onclick="handleRefill('peanut')">📥 補充花生</button>
+            <button class="btn btn-purple" onclick="handleRefill('anchovy')">📥 補充小魚乾</button>
+            <button class="btn btn-blue" onclick="sendAction('pan_heat')">🔥 加熱花生</button>
+          </div> -->
           <div class="section-title" style="margin-top: 15px;">製作程序</div>
           <div class="action-grid">
-            <button class="btn btn-orange" onclick="sendAction('toggle_heat')" style="grid-column: span 2;"><i>🔥</i>加熱花生 / 溫控</button>
-            <button class="btn btn-green" onclick="sendAction('make_waffle_a')"><i> 🧇 </i>製作鬆餅</button>
-            <button class="btn btn-green" onclick="sendAction('serve_peanuts')"><i>🥜</i>製作花生(標準)</button>
+            <!-- <button class="btn btn-orange" onclick="sendAction('toggle_heat')" style="grid-column: span 2;"><i>🔥</i>加熱花生 / 溫控</button> -->
+            <button class="btn btn-green" onclick="sendAction('serve_waffle')"><i> 🧇 </i>製作鬆餅</button>
+            <button class="btn btn-green" onclick="sendAction('serve_peanuts')"><i>🥜</i>製作花生</button>
+            <button class="btn btn-purple" onclick="openModal()"><i>📥</i>原料操作</button>
+          </div>
+          <div id="ingredientModal" class="modal-overlay" onclick="closeModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+              <div class="modal-header" style="background-color: #81D8D0; color: white; padding: 15px; border-radius: 5px 5px 0 0; margin: -20px -20px 20px -20px; text-align: center; display: block;">
+                  <h3 style="margin: 0; font-size: 20px;">原料操作</h3>
+                  </div>
+              <div class="modal-body">
+                <button class="btn btn-purple" onclick="handleRefill('peanut'); closeModal()">📥 補充花生</button>
+                <button class="btn btn-purple" onclick="handleRefill('anchovy'); closeModal()">📥 補充小魚乾</button>
+                <button class="btn btn-blue" onclick="sendAction('pan_heat'); closeModal()">🔥 加熱花生</button>
+              </div>
+            </div>
           </div>
           <div class="section-title" style="margin-top: 15px;">📋 當前排定程序</div>
-          <div class="card" style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(255,255,255,0.2); min-height: 60px; padding: 10px; margin-bottom: 10px;">
+          <div class="card" style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(255,255,255,0.2); min-height: 60px; padding: 10px; margin-bottom: 10px;max-height: 140px;overflow-y: auto;">
             <div id="mainWorkflowPreview" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
               <span class="hint" style="font-size: 12px;">(目前無自定義流程，將執行標準程序)</span>
             </div>
           </div>
 
-          <button class="btn btn-purple" id="runCustomBtn" onclick="executeCurrentWorkflow()" style="width: 100%; height: 50px; font-size: 16px;">
-            <i>🚀</i> 啟動程序
-          </button>  
+          <button class="btn btn-purple" id="runCustomBtn" onclick="executeCurrentWorkflow()" style="width: 100%; height: 50px; font-size: 16px;">🚀 啟動程序</button>  
         </div>
       </div>
     </div>
@@ -403,26 +675,55 @@
   <div id="page-workflow" class="page">
     <div class="ui-panel" style="width:100%; height:100%;">
 
-      <h2 style="color:white; margin-bottom:10px;">流程設定</h2>
-      <p style="color:white; opacity:0.7;">
+      <h2 style="color:#5D544F; margin-bottom:10px;">流程設定</h2>
+      <p style="color:#5D544F; opacity:0.7;">
         從左側拖拉流程到右側，並調整執行順序
       </p>
 
       <div class="workflow-editor">
 
         <!-- 左：流程庫 -->
-        <div class="workflow-panel">
+        <div class="workflow-panel"style="max-height: 725px;overflow-y: auto;">
           <h3>可用流程</h3>
           <div class="palette">
-            <!-- <div class="step-item" draggable="true" data-step="press_button">🔘 Press Button</div> -->
-            <div class="step-item" draggable="true" data-step="get_spoon">🥄 Get Spoon</div>
-            <div class="step-item" draggable="true" data-step="spoon_peanuts">🥜 Spoon Peanuts</div>
-            <div class="step-item" draggable="true" data-step="drop_spoon">🔄 Drop Spoon</div>
+            <div class="step-item step-peanut" draggable="true" data-step="get_spoon">🥄 Get Spoon</div>
+            <div class="step-item step-peanut" draggable="true" data-step="spoon_peanuts">🥜 Spoon Peanuts</div>
+            <div class="step-item step-peanut" draggable="true" data-step="drop_spoon">🔄 Drop Spoon</div>
+            <div class="step-item step-waffle" draggable="true" data-step="Open1stLid">🍴 Open1stLid</div>
+            <div class="step-item step-waffle" draggable="true" data-step="Close1stLid">🍴 Close1stLid</div>
+            <div class="step-item step-waffle" draggable="true" data-step="Open2ndLid">🍴 Open2ndLid</div>
+            <div class="step-item step-waffle" draggable="true" data-step="Close2ndLid">🍴 Close2ndLid</div>
+            <div class="step-item module-item" draggable="true" data-step="Pour1stBatterModule" style="border-left: 5px solid #bc8047;">
+              <div class="module-title">🥣 1st 倒鬆餅醬</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)</div>
+            </div>
+            <div class="step-item module-item" draggable="true" data-step="Cook1stWaffleModule" style="border-left: 5px solid #AB47BC;">
+              <div class="module-title">🥣 1st 做鬆餅</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(關蓋子 ➔ 等待鬆餅)</div>
+            </div>
+            <div class="step-item module-item" draggable="true" data-step="Serve1stWaffleModule" style="border-left: 5px solid #AB47BC;">
+              <div class="module-title">🥣1st serve鬆餅</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(開蓋子 ➔ 插鬆餅)</div>
+            </div>
+
+            <div class="step-item module-item" draggable="true" data-step="Pour2ndBatterModule" style="border-left: 5px solid #bc8047;">
+              <div class="module-title">🥣 2nd 倒鬆餅醬</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)</div>
+            </div>
+            <div class="step-item module-item" draggable="true" data-step="Cook2ndWaffleModule" style="border-left: 5px solid #AB47BC;">
+              <div class="module-title">🥣 2nd 做鬆餅</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(關蓋子 ➔ 等待鬆餅[請拖拉等待秒數]))</div>
+            </div>
+            <div class="step-item module-item" draggable="true" data-step="Serve2ndWaffleModule" style="border-left: 5px solid #AB47BC;">
+              <div class="module-title">🥣2nd serve鬆餅</div>
+              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(開蓋子 ➔ 插鬆餅)</div>
+            </div>
+            <div class="step-item param-step" draggable="true" data-step="WaitSeconds" data-label="⏱ 等待" data-param="seconds" style="border-left: 5px solid #14a800;">⏱ 等待（秒）</div>
           </div>
         </div>
 
         <!-- 右：實際流程 -->
-        <div class="workflow-panel">
+        <div class="workflow-panel"style="max-height: 725px;overflow-y: auto;">
           <h3>執行流程</h3>
           <div id="workflowList" class="workflow-list">
             <div class="hint">⬅ 從左側拖拉流程到這裡</div>
@@ -435,6 +736,25 @@
         ⬅ 回主頁
       </button>
 
+    </div>
+  </div>
+  <div id="colorModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">選擇杯子顏色</div>
+      <div class="modal-body">
+        <p>請輸入或選擇欲夾取的杯子顏色：</p>
+        <input type="text" id="cupColorInput" placeholder="例如：紅色" value="blue">
+        <div class="color-presets">
+          <span class="color-chip" style="background:#FFB7C5;" onclick="setPreset('pink')"></span>
+          <span class="color-chip" style="background:#BAE6FD;" onclick="setPreset('blue')"></span>
+          <span class="color-chip" style="background:#C1E1C1;" onclick="setPreset('green')"></span>
+          <span class="color-chip" style="background:#FDE68A;" onclick="setPreset('yellow')"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeColorModal()">取消</button>
+        <button class="modal-btn confirm" onclick="confirmColor()">確認補充</button>
+      </div>
     </div>
   </div>
   <script>
@@ -540,20 +860,6 @@
       flow.classList.add("active");
     }
 
-    function goMainPage() {
-      const main = document.getElementById("page-main");
-      const flow = document.getElementById("page-workflow");
-
-      console.log("goMainPage", main, flow);
-
-      if (!main || !flow) {
-        console.error("❌ page-main 或 page-workflow 不存在");
-        return;
-      }
-
-      flow.classList.remove("active");
-      main.classList.add("active");
-    }
     /* =========================
     * Web → Qt 動作呼叫
     * ========================= */
@@ -570,7 +876,9 @@
 
     let draggingItem = null;
     let dragSource = null;
-
+    /* =========================
+    * 拖放流程設定功能
+    * ========================= */
     // --- 1. 左側流程庫（來源） ---
     document.querySelectorAll(".palette .step-item").forEach(item => {
       item.addEventListener("dragstart", (e) => {
@@ -583,6 +891,19 @@
         item.classList.remove("dragging");
       });
     });
+    function enhanceParamStepIfNeeded(stepEl) {
+      if (stepEl.dataset.param === "seconds") {
+        if (stepEl.querySelector("input")) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "step-param-input";
+        input.min = "0";
+        input.value = "1";
+
+        stepEl.appendChild(input);
+      }
+    }
 
     // --- 2. 右側清單（目的地） ---
     const workflowList = document.getElementById("workflowList");
@@ -613,6 +934,7 @@
         const clone = draggingItem.cloneNode(true);
         clone.classList.remove("dragging");
         addWorkflowDragHandlers(clone); // 綁定右側專用事件
+        enhanceParamStepIfNeeded(clone);
 
         const afterElement = getDragAfterElement(workflowList, e.clientY);
         if (afterElement == null) {
@@ -646,15 +968,12 @@
 
       item.addEventListener("dragend", () => {
         item.classList.remove("dragging");
-        // 檢查拖拽結束時，如果不在 workflowList 內則移除 (保險做法)
         if (dragSource === "workflow" && !workflowList.contains(item)) {
-          // item 已經在 drop 事件中被移除
         }
         draggingItem = null;
         dragSource = null;
       });
 
-      // 保留雙擊刪除作為備案
       item.addEventListener("dblclick", () => {
         item.remove();
         printCurrentWorkflow();
@@ -683,9 +1002,9 @@
 
     // 1. 定義標準程序 (預設值)
     const defaultPeanutWorkflow = [
-      { id: "get_spoon", name: "拿鏟子" },
-      { id: "spoon_peanuts", name: "鏟花生" },
-      { id: "drop_spoon", name: "放鏟子" }
+      { id: "get_spoon", name: "get_spoon" },
+      { id: "spoon_peanuts", name: "spoon_peanuts" },
+      { id: "drop_spoon", name: "drop_spoon" }
     ];
 
     // 2. 更新主畫面預覽的函數
@@ -701,7 +1020,31 @@
       let isCustom = customSteps.length > 0;
 
       if (isCustom) {
-        displayData = customSteps.map(el => ({ name: el.textContent.trim() }));
+        // displayData = customSteps.map(el => ({ name: el.textContent.trim() }));
+        displayData = customSteps.map(el => {
+        const stepID = el.dataset.step;
+
+        // ⭐ 情況 1：等待秒數（param step）
+        const input = el.querySelector("input");
+        if (input) {
+          const seconds = input.value || 0;
+          return {
+            name: `⏱ 等待 ${seconds} 秒`
+          };
+        }
+
+        // ⭐ 情況 2：模組（可先只顯示名稱）
+        if (MODULE_DEFINITIONS && MODULE_DEFINITIONS[stepID]) {
+          return {
+            name: `🧩 ${el.querySelector(".module-title")?.textContent || stepID}`
+          };
+        }
+
+        // ⭐ 情況 3：一般 step
+        return {
+          name: el.textContent.trim()
+        };
+      });
         if(runBtnText) runBtnText.textContent = "執行自定義流程";
       } else {
         displayData = defaultPeanutWorkflow;
@@ -710,13 +1053,16 @@
 
       // 渲染標籤
       previewContainer.innerHTML = displayData.map((step, index) => {
-        const arrow = index < displayData.length - 1 ? '<span style="opacity:0.3">→</span>' : '';
-        return `<div class="step-badge">${step.name}</div>${arrow}`;
+        const arrow = index < displayData.length - 1 ? '<span style="margin: 0 8px; color: #FFFFFF; font-weight: 900; font-size: 20px; line-height: 1;">➔</span>' : '';
+        return `
+        <div class="step-badge" style="background: #FFFFFF; color: #0369A1; border: 2px solid #FFFFFF; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold;padding: 5px 12px;border-radius: 8px;">
+                  ${step.name}
+                </div>${arrow}`;
       }).join('');
       
       previewContainer.innerHTML += isCustom ? 
-        '<span class="default-tag" style="background:#AB47BC; color:#FFFFFF; border-color:#AB47BC;">自定義</span>' : 
-        '<span class="default-tag" style="background:#546E7A; color:#FFFFFF; border-color:#546E7A;">標準</span>';
+        '<span class="default-tag" style="background:#E9D5FF; color:#6B21A8; border-color:#D8B4FE;">自定義</span>' : 
+        '<span class="default-tag" style="background:#CFD8DC; color:#455A64; border-color:#B0BEC5;">標準</span>';
     }
 
     // 3. 執行「標準」流程的快捷按鈕
@@ -727,27 +1073,77 @@
         bridge.sendAction(JSON.stringify(ids));
       }
     }
-
+    const MODULE_DEFINITIONS = {
+      "Pour1stBatterModule": [
+        "Grab1stBatter",
+        "Pour1stBatter",
+        "Drop1stBatter"
+      ],
+      "Cook1stWaffleModule": [
+        "Close1stLid",
+      ],
+      "Serve1stWaffleModule": [
+        "serve_1st_stove"
+      ],
+      "Pour2ndBatterModule": [
+        "Grab2ndBatter",
+        "Pour2ndBatter",
+        "Drop2ndBatter"
+      ],
+      "Cook2ndWaffleModule": [
+        "Close2ndLid"
+      ],
+      "Serve2ndWaffleModule": [
+        "serve_2nd_stove"
+      ]
+    };
     // 4. 執行「當前排定」流程的按鈕 (會判斷有沒有自定義)
     function executeCurrentWorkflow() {
       const workflowList = document.getElementById("workflowList");
       const customSteps = [...workflowList.querySelectorAll(".step-item")];
-      
+
       let finalIDs = [];
+
       if (customSteps.length > 0) {
-        finalIDs = customSteps.map(el => el.dataset.step);
-        setSystemMsg("系統訊息：啟動自定義程序...");
+        customSteps.forEach(el => {
+          const stepID = el.dataset.step;
+
+          // 1️⃣ Module
+          if (MODULE_DEFINITIONS[stepID]) {
+            finalIDs.push(...MODULE_DEFINITIONS[stepID]);
+            return;
+          }
+
+          // 2️⃣ Param step（例如 WaitSeconds）
+          const input = el.querySelector("input");
+          if (input) {
+            finalIDs.push({
+              step: stepID,
+              seconds: Number(input.value) || 0
+            });
+            return;
+          }
+
+          // 3️⃣ Normal step
+          finalIDs.push(stepID);
+        });
+
+
+        setSystemMsg("系統訊息：啟動自定義程序");
       } else {
         finalIDs = defaultPeanutWorkflow.map(s => s.id);
         setSystemMsg("系統訊息：啟動標準程序...");
       }
+
+      console.log("最終執行清單:", finalIDs);
 
       if (bridge && bridge.sendAction) {
         bridge.sendAction("run_workflow:" + JSON.stringify(finalIDs));
       }
     }
 
-    // 5. 修改你原本的 goMainPage，讓它回主頁時自動刷新預覽
+
+    // 5. 回主頁時自動刷新預覽
     function goMainPage() {
       const main = document.getElementById("page-main");
       const flow = document.getElementById("page-workflow");
@@ -762,8 +1158,111 @@
     window.addEventListener("load", () => {
       refreshWorkflowPreview();
     });
+    // 1. 用物件分別儲存花生和小魚乾的顏色，初始值都設為 'blue'
+    let refillState = {
+        peanut: "blue",
+        anchovy: "blue"
+    };
+    let currentRefillItem = ""; // 用來紀錄當前是哪種原料
+
+    function handleRefill(item) {
+      currentRefillItem = item; 
+      const header = document.querySelector('.modal-header');
+      const colorInput = document.getElementById('cupColorInput');
+      colorInput.value = refillState[item];
+      // 根據傳入的 item 變更標題文字
+      // if(item === 'peanut') header.innerText = "補充花生 - 選擇杯子顏色";
+      // if(item === 'anchovy') header.innerText = "補充小魚乾 - 選擇杯子顏色";
+      
+      document.getElementById('colorModal').style.display = 'flex';
+    }
+
+    function closeColorModal() {
+      // 隱藏視窗
+      document.getElementById('colorModal').style.display = 'none';
+      document.getElementById('colorModal').style.display = 'none';
+    }
+
+    // 設定快速選擇顏色
+    function setPreset(color) {
+      document.getElementById('cupColorInput').value = color;
+      refillState[currentRefillItem] = color;
+    }
+
+    // 確認選擇並發送動作
+    function confirmColor() {
+      const color = document.getElementById('cupColorInput').value;
+      
+      if (color.trim() === "") {
+          alert("請輸入顏色！");
+          return;
+      }
+      refillState[currentRefillItem] = color;
+      // 執行發送：會送出如 refill_peanut|紅色
+      if (typeof sendAction === "function") {
+          // sendAction(`refill_${currentRefillItem}|${color}`);
+          setSystemMsg(`指令已發送: refill_${currentRefillItem} | ${color} cup`);
+      }
+      
+      closeColorModal();
+    }
+
+    function switchCamera(type) {
+        const imgElement = document.getElementById('mainStream');
+        
+        // 1. 立即隱藏影像（變為黑色背景，假設父層背景是黑色）
+        imgElement.style.opacity = "0";
+        imgElement.src = ""; 
+        
+        console.log("正在切換至:", type);
+
+        // 2. 處理狀態框亮燈（移到前面確保點擊即反饋）
+        document.querySelectorAll('.status-row-compact-width').forEach(el => {
+            el.style.backgroundColor = "rgba(255, 255, 255, 0.4)";
+        });
+        if (window.event && window.event.currentTarget) {
+            window.event.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+        }
+
+        setTimeout(() => {
+            const time = new Date().getTime();
+            let url = "http://127.0.0.1:5000/video_feed_";
+            
+            if (type === 'rtsp1') url += "rtsp1";
+            else if (type === 'rtsp2') url += "rtsp2";
+            else if (type === 'rtsp3') url += "rtsp3"; // 補上 cam3
+            else url += "usb";
+
+            // 3. 監聽 onload 事件：當第一張正確的影格到達瀏覽器時觸發
+            imgElement.onload = function() {
+                // 稍微延遲一小下（100ms），確保避開最後一絲可能的綠光
+                setTimeout(() => {
+                    imgElement.style.transition = "opacity 0.4s ease-in-out";
+                    imgElement.style.opacity = "1";
+                }, 100);
+                // 清除 onload 避免重複觸發串流中的每一影格
+                imgElement.onload = null;
+            };
+
+            imgElement.src = url + "?t=" + time;
+        }, 150); // 給後端 150ms 釋放舊連線
+    }
 
 
+    function openModal() {
+        document.getElementById('ingredientModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('ingredientModal').style.display = 'none';
+    }
+
+    // 可選：按下 ESC 鍵也可以關閉視窗
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
     window.addEventListener("load", initBridge);
   </script>
 </body>

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QCloseEvent, QPixmap, QImage
 from PySide6.QtCore import Qt, Signal, QTimer
-
+from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
 from MainWindow_ui import Ui_MainWindow
 from Camera.camera import *
 from GraspGen.graspgen_comm import *
@@ -30,12 +30,23 @@ class PAN_POS(Enum):
 
 class main_window_ctrl(QMainWindow):
     statusChanged = Signal(str)
+    receiveOrder = Signal(str)
     tempChanged = Signal(float)
     grabbingSpoonChanged = Signal(bool)
     peanutStatusChanged = Signal(str)
     leftTimeChanged = Signal(int)
     def __init__(self):
         super().__init__()
+        # ⭐⭐⭐ PySide6 正確寫法 ⭐⭐⭐
+        profile = QWebEngineProfile.defaultProfile()
+        settings = profile.settings()
+
+        settings.setAttribute(
+            QWebEngineSettings.LocalContentCanAccessRemoteUrls, True
+        )
+        settings.setAttribute(
+            QWebEngineSettings.AllowRunningInsecureContent, True
+        )
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui_connect()
@@ -114,8 +125,9 @@ class main_window_ctrl(QMainWindow):
             self.grabbing_fork = False
             self.waffle_machine_on_off = False          
             self.right_cartesian_pose = [377.204,-450.270,344.386,-97.57,-43.60,-81.72]
-            self.suggest_1st_lid_x = 1.4
-            self.suggest_1st_lid_y = 3.5
+            self.left_cartesian_pose = [372.229,-200.201,344.319,-97.58,-43.59,-81.71]
+            self.suggest_1st_lid_x = 0
+            self.suggest_1st_lid_y = 0
             self.suggest_2nd_lid_x = 0
             self.suggest_2nd_lid_y = 0
 
@@ -200,9 +212,9 @@ class main_window_ctrl(QMainWindow):
         self.thread_counting_left_time.start()
 
     def tcp_thermal_init(self):
-        self.tcp_thermal = ThermalClient("192.168.1.133", 9000)
-        # self.tcp_thermal.connect()
-        # print("tcp_thermal_init connect")
+        self.tcp_thermal = ThermalClient("192.168.1.133", 9060)
+        self.tcp_thermal.connect()
+        print("tcp_thermal_init connect")
         
 
 
@@ -317,7 +329,7 @@ class main_window_ctrl(QMainWindow):
             # output = self.check_peanuts(save_image=True)
             output = self.check_peanuts_amount()
             # output = self.check_peanuts('PeanutNumberClassification/operating-sub.png') only use when debugging
-            self.statusChanged.emit(f"[INFO]check_peanuts output: {output}\n")
+            self.statusChanged.emit(f"[INFO]peanuts {output}\n")
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]check_peanuts error: {e}\n")
 
@@ -602,23 +614,32 @@ class main_window_ctrl(QMainWindow):
     
     def pushButton_Open1stLid_clicked(self):
         try:
+            self.Open1stLid_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]open_1st_lid error: {e}\n")
+    def Open1stLid_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
-
+                self.drop_spoon_flow()
             state = self.tcp_check_waffle_lid.get_latest()
-
             if state.right_lid == LidPos.OPEN:
                 self.statusChanged.emit(f"[INFO]1st Lid already opened.\n")
                 return
-
             self.run_trajectory("ROS/trajectories/open_1st_lid.csv", vel=100, acc=500)
+            
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]open_1st_lid error: {e}\n")
 
+
     def pushButton_Open2ndLid_clicked(self):
         try:
+            self.Open2ndLid_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]open_2nd_lid error: {e}\n")
+    def Open2ndLid_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
@@ -628,10 +649,16 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]open_2nd_lid error: {e}\n")
 
+
     def pushButton_Grab1stBatter_clicked(self):
         try:
+            self.Grab1stBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]grab_1st_batter error: {e}\n")
+    def Grab1stBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state= self.tcp_check_waffle_lid.get_latest()
             if state.right_lid == LidPos.CLOSED:
@@ -643,15 +670,23 @@ class main_window_ctrl(QMainWindow):
 
     def pushButton_Grab2ndBatter_clicked(self):
         try:
+            self.Grab2ndBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]grab_2nd_batter error: {e}\n")
+    def Grab2ndBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.CLOSED:
                 self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
             self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]grab_2nd_batter error: {e}\n")
+    
     def apply_offset(self,v):
+        if -0.4 <= v <= 0.4:
+            return 0
         if v > 0:
             return 5 if v <= 1 else 10
         elif v < 0:
@@ -660,8 +695,13 @@ class main_window_ctrl(QMainWindow):
             return 0
     def pushButton_Pour1stBatter_clicked(self):
         try:
+            self.Pour1stBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]pour_1st_batter error: {e}\n")
+    def Pour1stBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.right_lid == LidPos.CLOSED:
@@ -670,89 +710,114 @@ class main_window_ctrl(QMainWindow):
                 self.run_trajectory("ROS/trajectories/grab_1st_batter.csv", vel=100, acc=500)
 
             self.run_trajectory("ROS/trajectories/pour_1st_batter.csv", vel=100, acc=500)
-            time.sleep(3)
+            time.sleep(4.5)
             
-            cartesian_pose = [377.204,-450.270,344.386,-97.57,-43.60,-81.72]
-            cartesian_pose[0] += self.apply_offset(self.suggest_1st_lid_x)
-            cartesian_pose[1] += self.apply_offset(self.suggest_1st_lid_y)
+            self.right_cartesian_pose[0] += self.apply_offset(self.suggest_1st_lid_x)
+            self.right_cartesian_pose[1] += self.apply_offset(self.suggest_1st_lid_y)
             
-            self.statusChanged.emit(f"certesian_pose:{cartesian_pose}\n")
-            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
+            self.statusChanged.emit(f"certesian_pose:{self.right_cartesian_pose}\n")
+            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [self.right_cartesian_pose], "wait_time": 0.0})
+            self.wait_for_waffle_pour()
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]pour_1st_batter error: {e}\n")
-
     def pushButton_Pour2ndBatter_clicked(self):
         try:
+            self.Pour2ndBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]pour_2nd_batter error: {e}\n")
+    def Pour2ndBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
             
             state  = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.CLOSED:
-                self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv", vel=50, acc=500)
+                self.run_trsaajectory("ROS/trajectories/drop_2nd_batter.csv", vel=50, acc=500)
                 self.run_trajectory("ROS/trajectories/open_2nd_lid.csv", vel=100, acc=500)
                 self.run_trajectory("ROS/trajectories/grab_2nd_batter.csv", vel=100, acc=500)
 
             self.run_trajectory("ROS/trajectories/pour_2nd_batter.csv", vel=100, acc=500)
-            cartesian_pose = [372.229,-200.201,344.319,-97.58,-43.59,-81.71]
             time.sleep(3)
-            cartesian_pose[0] += self.apply_offset(self.suggest_2nd_lid_x)
-            cartesian_pose[1] += self.apply_offset(self.suggest_2nd_lid_y)
-            self.statusChanged.emit(f"certesian_pose:{cartesian_pose}\n")
-            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [cartesian_pose], "wait_time": 0.0})
+            self.left_cartesian_pose[0] += self.apply_offset(self.suggest_2nd_lid_x)
+            self.left_cartesian_pose[1] += self.apply_offset(self.suggest_2nd_lid_y)
+            self.statusChanged.emit(f"certesian_pose:{self.left_cartesian_pose}\n")
+            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [self.left_cartesian_pose], "wait_time": 0.0})
+            self.wait_for_waffle_pour()
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]pour_2nd_batter error: {e}\n")
 
     def pushButton_Drop1stBatter_clicked(self):
         try:
+            self.Drop1stBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]drop_1st_batter error: {e}\n")
+    def Drop1stBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
             self.run_trajectory("ROS/trajectories/drop_1st_batter.csv", vel=50, acc=500)
         except Exception as e:
-            self.statusChanged.emit(f"[ERROR]drop_1st_batter error: {e}\n")    
+            self.statusChanged.emit(f"[ERROR]drop_1st_batter error: {e}\n")   
 
     def pushButton_Drop2ndBatter_clicked(self):
         try:
+            self.Drop2ndBatter_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]drop_2nd_batter error: {e}\n")
+    def Drop2ndBatter_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
             self.run_trajectory("ROS/trajectories/drop_2nd_batter.csv", vel=100, acc=500)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]drop_2nd_batter error: {e}\n")    
 
     def pushButton_Close1stLid_clicked(self):
         try:
+            self.Close1stLid_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]close_1st_lid error: {e}\n")
+    def Close1stLid_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
-
+                self.drop_spoon_flow()
             state = self.tcp_check_waffle_lid.get_latest()
-            self.statusChanged.emit(f"suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
-
+            self.statusChanged.emit(f"Befor done: suggest_1st_lid_x: {state.suggest_rdx}, suggest_1st_lid_y: {state.suggest_rdy}\n")
             if state.right_lid == LidPos.CLOSED:
                 self.statusChanged.emit(f"[INFO]1st Lid already closed.\n")
                 return
-            
             self.run_trajectory("ROS/trajectories/close_1st_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]close_1st_lid error: {e}\n")
 
     def pushButton_Close2ndLid_clicked(self):
         try:
+            self.Close2ndLid_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]close_2nd_lid error: {e}\n")
+    def Close2ndLid_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
-
+                self.drop_spoon_flow()
             state = self.tcp_check_waffle_lid.get_latest()
-            self.statusChanged.emit(f"suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
+            self.statusChanged.emit(f"Before done: suggest_2nd_lid_x: {state.suggest_ldx}, suggest_2nd_lid_y: {state.suggest_ldy}\n")
             if state.left_lid == LidPos.CLOSED:
                 self.statusChanged.emit(f"[INFO]2nd Lid already closed.\n")
                 return
-
             self.run_trajectory("ROS/trajectories/close_2nd_lid.csv", vel=100, acc=500)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]close_2nd_lid error: {e}\n")
 
     def pushButton_GrabFork_clicked(self)-> bool:
         try:
+            return self.GrabFork_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]grab_fork error: {e}\n")
+            return False
+    def GrabFork_flow(self)-> bool:
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.right_waffle == WafflePos.ON_UPPER_LID:
@@ -779,13 +844,20 @@ class main_window_ctrl(QMainWindow):
         time.sleep(wait_time)
 
     def wait_for_waffle_pour(self):
-        wait_time = (int)(self.ui.lineEdit_WaitForWafflePourTime.text())
+        # wait_time = (int)(self.ui.lineEdit_WaitForWafflePourTime.text())
+        wait_time = self.parameters["WaitForWafflePourTime"]
         time.sleep(wait_time)
+
 
     def pushButton_DropFork_clicked(self):
         try:
+            self.DropFork_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]drop_fork error: {e}\n")
+    def DropFork_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_lid == LidPos.OPEN:
@@ -803,17 +875,26 @@ class main_window_ctrl(QMainWindow):
 
     def pushButton_Get1stWaffle_clicked(self):
         try:
+            self.Get1stWaffle_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]get_1st_waffle error: {e}\n")
+    def Get1stWaffle_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
-
+                self.drop_spoon_flow()
             self.run_trajectory("ROS/trajectories/get_1st_waffle.csv", vel=50, acc=500, blend=80)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]get_1st_waffle error: {e}\n")
 
     def pushButton_Get2ndWaffle_clicked(self):
         try:
+            self.Get2ndWaffle_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]get_2nd_waffle error: {e}\n")
+    def Get2ndWaffle_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             state = self.tcp_check_waffle_lid.get_latest()
             if state.left_waffle == WafflePos.ON_UPPER_LID:
@@ -827,8 +908,13 @@ class main_window_ctrl(QMainWindow):
 
     def pushButton_DropWaffle_clicked(self):
         try:
+            self.DropWaffle_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]drop_waffle error: {e}\n")
+    def DropWaffle_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             self.run_trajectory("ROS/trajectories/drop_waffle.csv", vel=40, acc=500)
         except Exception as e:
@@ -836,8 +922,13 @@ class main_window_ctrl(QMainWindow):
 
     def pushButton_GoToDefault_clicked(self):
         try:
+            self.GoToDefault_flow()
+        except Exception as e:
+            self.statusChanged.emit(f"[ERROR]go_to_default error: {e}\n")
+    def GoToDefault_flow(self):
+        try:
             if self.grabbing_spoon == True:
-                self.drop_spoon()
+                self.drop_spoon_flow()
 
             self.run_trajectory("ROS/trajectories/go_to_default.csv", vel=100, acc=500)
         except Exception as e:
@@ -853,41 +944,55 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]Serve Waffle error: {e}\n")
 
+    def wait_time(self, seconds):
+        time.sleep(seconds)
+        self.statusChanged.emit(f"[INFO] Waited for {seconds} seconds done.\n")
+
     def cook_1st_stove(self):
-        self.pushButton_Open1stLid_clicked()
-        self.pushButton_Grab1stBatter_clicked()
-        self.pushButton_Pour1stBatter_clicked()
-        self.wait_for_waffle_pour()
-        self.pushButton_Drop1stBatter_clicked()
-        self.pushButton_Close1stLid_clicked()
+        self.cook_1st_stove_flow()
+
+    def cook_1st_stove_flow(self):
+        self.Open1stLid_flow()
+        self.Grab1stBatter_flow()
+        self.Pour1stBatter_flow()
+        # self.wait_for_waffle_pour()
+        self.Drop1stBatter_flow()
+        self.Close1stLid_flow()
 
     def cook_2nd_stove(self):
-        self.pushButton_Open2ndLid_clicked()
-        self.pushButton_Grab2ndBatter_clicked()
-        self.pushButton_Pour2ndBatter_clicked()
-        self.wait_for_waffle_pour()
-        self.pushButton_Drop2ndBatter_clicked()
-        self.pushButton_Close2ndLid_clicked()
+        self.cook_2nd_stove_flow()
+    def cook_2nd_stove_flow(self):
+        self.Open2ndLid_flow()
+        self.Grab2ndBatter_flow()
+        self.Pour2ndBatter_flow()
+        # self.wait_for_waffle_pour()
+        self.Drop2ndBatter_flow()
+        self.Close2ndLid_flow()
+
 
     def serve_1st_stove(self):
-        self.pushButton_Open1stLid_clicked()
-        if not self.pushButton_GrabFork_clicked():
+        self.serve_1st_stove_flow()
+    def serve_1st_stove_flow(self):
+        self.Open1stLid_flow()
+        if not self.GrabFork_flow():
             self.statusChanged.emit("[INFO] Abort at grab fork, cause waffle is on the upper lid.\n")
             return
         self.wait_for_waffle_done()
-        self.pushButton_Get1stWaffle_clicked()
-        self.pushButton_DropWaffle_clicked()
-        self.pushButton_DropFork_clicked()
+        self.Get1stWaffle_flow()
+        self.DropWaffle_flow()
+        self.DropFork_flow()
+
 
     def serve_2nd_stove(self):
-        self.pushButton_Open2ndLid_clicked()
+        self.serve_2nd_stove_flow()
+    def serve_2nd_stove_flow(self):
+        self.Open2ndLid_flow()
         if self.grabbing_fork == False:
-            self.pushButton_GrabFork_clicked()
+            self.GrabFork_flow()
         self.wait_for_waffle_done()
-        self.pushButton_Get2ndWaffle_clicked()
-        self.pushButton_DropWaffle_clicked()
-        self.pushButton_DropFork_clicked()
-        
+        self.Get2ndWaffle_flow()
+        self.DropWaffle_flow()
+        self.DropFork_flow()
 
     def pushButton_ServeBoth_clicked(self):
         try:
@@ -917,7 +1022,7 @@ class main_window_ctrl(QMainWindow):
 
             try:
                 order = self.tcp.received_orders.get()
-                self.statusChanged.emit(f"[INFO]Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.\n")
+                self.statusChanged.emit(f"[INFO]Serve order received: peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.")
                 if order.waffle_num <= self.num_left_waffle:
                     self.num_left_waffle -= order.waffle_num
                     order.waffle_num = 0
@@ -1075,7 +1180,7 @@ class main_window_ctrl(QMainWindow):
             self.num_left_waffle = self.num_left_waffle + 4 - num_waffle
         else:
             self.num_left_waffle = self.num_left_waffle + 8 - num_waffle
-
+        self.statusChanged.emit(f"[INFO]🧇 製作鬆餅完成.\n")
     def serve_peanuts(self, num_peanuts):
         try:
             count = 1
@@ -1201,9 +1306,10 @@ class main_window_ctrl(QMainWindow):
     
     def pan_heat(self):
         if self.current_order_left_seconds > 0:
-            self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
-            
-        self.wok.heat()        
+            # self.current_order_left_seconds += (int)(self.ui.lineEdit_PeanutsHeatingTime.text())
+            self.current_order_left_seconds += self.parameters["PeanutsHeatingTime"] 
+        self.wok.heat()   
+        self.statusChanged.emit(f"[INFO] Peanuts heated.\n")     
 
     def AC(self):
         self.waffle_machine_on_off = not self.waffle_machine_on_off
