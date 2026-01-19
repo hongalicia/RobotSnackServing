@@ -57,7 +57,7 @@
     .ui-panel {
       flex: 1;
       width: 100%;
-      min-width: 320px;
+      min-width: 500px;
       background: linear-gradient(180deg, #A2E4DD 0%, #81D8D0 100%);
       display: flex;
       flex-direction: column;
@@ -516,7 +516,7 @@
       <div class="sim-view">
         <img
           id="mainStream"
-          src="http://127.0.0.1:5000/video_feed_usb"
+          src="http://127.0.0.1:5000/video_feed/usb"
           style="
             width: 100%;
             height: 100%;
@@ -662,9 +662,9 @@
               initUI();
               resetWorkflowList();
               refreshWorkflowPreview();
-
+              const names = loadedConfigs.map(cfg => cfg.name).join("、");
               setSystemMsg(
-                  `系統訊息：已載入 ${files.length} 個設定檔`
+                  `系統訊息：已載入 ${files.length} 個設定檔：${names}`
               );
               return;
           }
@@ -1119,12 +1119,7 @@
       imgElement.style.transition = "none";
       imgElement.style.opacity = "0";
 
-      let url = "http://127.0.0.1:5000/video_feed/";
-
-      if (type === "rtsp1") url += "cam1";
-      else if (type === "rtsp2") url += "cam2";
-      else if (type === "rtsp3") url += "cam3";
-      else url += "usb";
+      const url = "http://127.0.0.1:5000/video_feed/" + type;
 
       // 當第一張 frame 到了才淡入
       imgElement.onload = function () {
@@ -1212,9 +1207,10 @@
       if (cameraArea) {
         cameraArea.innerHTML = ''; 
         const fixedCams = [
-            { id: "cam1", type: "rtsp1" },
-            { id: "cam2", type: "video_feed_usb" },
-            { id: "cam3", type: "rtsp2" }
+            { id: "cam1", type: "cam1" },
+            { id: "cam2", type: "cam2" },
+            { id: "cam3", type: "usb" },
+            { id: "cam4", type: "ensenso" }
         ];
 
         fixedCams.forEach(cam => {

@@ -1,0 +1,30 @@
+{
+  "current_mode": "花生模式",
+
+  "modal_title": "原料與設備操作",
+  "modal_actions": [
+    { "label": "補充花生", "action_id": "refill_peanut", "color": "btn-purple", "type": "refill" },
+    { "label": "補充小魚乾", "action_id": "refill_anchovy", "color": "btn-purple", "type": "refill" },
+    { "label": "加熱炒鍋", "action_id": "pan_heat", "color": "btn-blue", "type": "command" }
+  ],
+  
+  "sensors": [
+    { "key": "peanut", "label": "花生存量", "unit": "", "icon": "🥜" },
+    { "key": "shovel",   "label": "鏟子狀態", "unit": "",   "icon": "🥄" },
+    { "key": "heat",     "label": "炒鍋溫度", "unit": "°C", "icon": "🔥" }
+
+  ],
+  "actions": [
+    { "action_id": "get_spoon",   "label": "拿取勺子", "color": "step-peanut" },
+    { "action_id": "spoon_peanuts", "label": "挖取花生", "color": "step-peanut" },
+    { "action_id": "drop_spoon",  "label": "放回勺子", "color": "step-peanut" }
+  ],
+  "standard_workflow": {
+    "button_label": "花生製作程序", 
+    "steps": [
+      "get_spoon",
+      "spoon_peanuts",   
+      "drop_spoon"
+    ]
+  }
+}

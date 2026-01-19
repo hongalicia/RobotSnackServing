@@ -126,6 +126,7 @@ class main_window_ctrl(QMainWindow):
             self.waffle_machine_on_off = False          
             self.right_cartesian_pose = [377.204,-450.270,344.386,-97.57,-43.60,-81.72]
             self.left_cartesian_pose = [372.229,-200.201,344.319,-97.58,-43.59,-81.71]
+            self.new_wait_pose = [372.233, -200.193, 344.300, 105.327, -68.789, 78.711]
             self.suggest_1st_lid_x = 0
             self.suggest_1st_lid_y = 0
             self.suggest_2nd_lid_x = 0
@@ -234,7 +235,7 @@ class main_window_ctrl(QMainWindow):
 
     def cam_init(self):
         self.cam = Camera()
-        self.cam.cam_init([2])
+        self.cam.cam_init([3])
 
     def tcp_check_waffle_lid_init(self):
         self.tcp_check_waffle_lid = LidClient("192.168.1.133", 9000)
@@ -341,7 +342,7 @@ class main_window_ctrl(QMainWindow):
             if image_path is not None:
                 image = cv2.imread(image_path)
             else:
-                image = self.cam.capture_single(2)
+                image = self.cam.capture_single(3)
 
             print("Load peanuts amount roi.")
             file = open('PeanutNumberClassification/roi.json', 'r')
@@ -743,6 +744,8 @@ class main_window_ctrl(QMainWindow):
             self.statusChanged.emit(f"certesian_pose:{self.left_cartesian_pose}\n")
             self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [self.left_cartesian_pose], "wait_time": 0.0})
             self.wait_for_waffle_pour()
+            self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [self.new_wait_pose], "wait_time": 0.0})
+            time.sleep(0.5)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]pour_2nd_batter error: {e}\n")
 

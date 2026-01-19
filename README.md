@@ -37,8 +37,7 @@ uv run scripts/mia_server.py --no-confirm
 6. Open Main Window:
 ```bash
 cd ~/RobotSnackServing && \
-conda activate isaac-groot-ros2 && \
-python MainWindow_app.py
+uv run MainWindow_app.py
 ```
 
 7. modify UI

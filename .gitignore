@@ -220,3 +220,6 @@ ROS/trajectories/**.csv#
 
 # Peanut dataset images
 PeanutNumberClassification/dataset/
+
+#cam_stream
+cam_stream/pyzed-5.0-cp311-cp311-linux_x86_64.whl

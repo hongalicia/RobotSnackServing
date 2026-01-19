@@ -1,0 +1,66 @@
+{
+  "current_mode": "花生模式",
+
+  "sensors": [
+    { "key": "waffle", "label": "鬆餅機狀態", "unit": "ready"}
+  ],
+  "actions": [
+    { "action_id": "Open1stLid", "label": "Open1stLid", "color": "step-waffle", "icon": "🍴" },
+    { "action_id": "Close1stLid", "label": "Close1stLid", "color": "step-waffle", "icon": "🍴" },
+    { "action_id": "Open2ndLid", "label": "Open2ndLid", "color": "step-waffle", "icon": "🍴" },
+    { "action_id": "Close2ndLid", "label": "Close2ndLid", "color": "step-waffle", "icon": "🍴" },
+
+    { 
+      "action_id": "Pour1stBatterModule", 
+      "label": "1st 倒鬆餅醬", 
+      "is_module": true, 
+      "details": "(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)",
+      "color": "module-item" 
+    },
+    { 
+      "action_id": "Cook1stWaffleModule", 
+      "label": "1st 做鬆餅", 
+      "is_module": true, 
+      "details": "(關蓋子 ➔ 等待鬆餅)",
+      "color": "module-item " 
+    },
+    { 
+      "action_id": "Serve1stWaffleModule", 
+      "label": "1st serve鬆餅", 
+      "is_module": true, 
+      "details": "(開蓋子 ➔ 插鬆餅)",
+      "color": "module-item " 
+    },
+    { 
+      "action_id": "Pour2ndBatterModule", 
+      "label": "2nd 倒鬆餅醬", 
+      "is_module": true, 
+      "details": "(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)",
+      "color": "module-item " 
+    },
+    { 
+      "action_id": "Cook2ndWaffleModule", 
+      "label": "2nd 做鬆餅", 
+      "is_module": true, 
+      "details": "(關蓋子 ➔ 等待鬆餅)",
+      "color": "module-item " 
+    },
+    { 
+      "action_id": "Serve2ndWaffleModule", 
+      "label": "2nd serve鬆餅", 
+      "is_module": true, 
+      "details": "(開蓋子 ➔ 插鬆餅)",
+      "color": "module-item " 
+    }
+  ],
+  "standard_workflow": {
+    "button_label": "鬆餅製作程序", 
+    "steps": [
+      "Open1stLid",
+      "Pour1stBatterModule",
+      "Close1stLid",
+      "WaitSeconds",
+      "Serve1stWaffleModule"
+    ]
+  }
+}
