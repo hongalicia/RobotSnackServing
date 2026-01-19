@@ -21,4 +21,5 @@ dependencies = [
     "pyside6>=6.10.1",
     "ultralytics>=8.3.243",
     "zmq>=0.0.0",
+    "pyzed @ https://download.stereolabs.com/zedsdk/5.0/whl/linux_x86_64/pyzed-5.0-cp311-cp311-linux_x86_64.whl",
 ]
