@@ -331,17 +331,6 @@
       border-radius: 4px;
       margin-left: auto;
     }
-    /* 彈窗遮罩 */
-    .modal-overlay {
-      display: none; /* 預設隱藏 */
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
 
     /* 彈窗主體 */
     .modal-card {
@@ -358,14 +347,7 @@
       to { transform: scale(1); opacity: 1; }
     }
 
-    .modal-header {
-      background: #81D8D0; /* Tiffany 綠 */
-      color: #FFF;
-      padding: 15px;
-      font-weight: bold;
-      text-align: center;
-      font-size: 18px;
-    }
+
 
     .modal-body {
       padding: 20px;
@@ -547,6 +529,12 @@
 
 
       <div class="ui-panel">
+        <div class="card" style="background: rgba(255, 255, 255, 0.2); margin-bottom: 10px; display: flex; justify-content: center; padding: 10px;">
+          <button class="btn btn-secondary" style="width: 100%; height: 45px; background: #FFF;" onclick="document.getElementById('configInput').click()">
+            📁 載入設定檔 (JSON)
+          </button>
+          <input type="file" id="configInput" style="display: none;" accept=".json,.config" multiple onchange="loadConfigFiles(this)">
+        </div>
         <div class="top-control-bar">
           <button class="btn btn-secondary" onclick="goWorkflowPage()">⚙️ 流程設定</button>
           <button class="btn btn-secondary" onclick="sendAction('virtual_validation')">⚙️ 虛擬驗證</button>
@@ -561,102 +549,24 @@
         <div class="card status-section">
           <div class="section-title">設備監控</div>
 
-          <div class="status-row-group">
-            <div class="status-row status-row-compact-width">
-              <span class="status-label">
-                <span class="status-icon">🥜</span>花生存量
-              </span>
-              <div class="status-indicator">
-                <span class="dot green" id="peanutDot"></span>
-                <span id="peanutText">充足</span>
-              </div>
-            </div>
-            <div class="status-row status-row-compact-width" onclick="switchCamera('rtsp1')" style="cursor: pointer;">
-              <span class="status-label">
-                <span class="status-icon">📷</span>cam1
-              </span>
-              <div class="status-indicator">
-                <span class="dot green"></span>
-                <span>連線</span>
-              </div>
-            </div>
+          <div id="dynamic-status-container" style="display: flex; gap: 15px; width: 100%;">
+            <div id="fixed-camera-area" style="flex: 0 0 120px; min-height: 50px; display: flex; flex-direction: column; gap: 10px;"></div>
+            <div id="dynamic-sensor-area" style="flex: 1; min-height: 50px; display: flex; flex-direction: column; gap: 10px;"></div>
           </div>
-          
-          <div class="status-row-group">
-            <div class="status-row status-row-compact-width">
-              <span class="status-label">
-                <span class="status-icon">🥄</span>鏟子狀態
-              </span>
-              <div class="status-indicator">
-                <span class="dot gray" id="shovelDot"></span>
-                <span id="shovelText">閒置</span>
-              </div>
-            </div>
-
-            <div class="status-row status-row-compact-width" onclick="switchCamera('video_feed_usb')" style="cursor: pointer;">
-              <span class="status-label">
-                <span class="status-icon">📷</span>cam2
-              </span>
-              <div class="status-indicator">
-                <span class="dot green"></span>
-                <span>連線</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="status-row-group">
-            <div class="status-row status-row-compact-width">
-              <span class="status-label">
-                <span class="status-icon">🧇</span>鬆餅機
-              </span>
-              <div class="status-indicator">
-                <span class="dot green" id="waffleDot"></span>
-                <span id="waffleText">就緒</span>
-              </div>
-            </div>
-
-            <div class="status-row status-row-compact-width" onclick="switchCamera('video_feed_usb')" style="cursor: pointer;">
-              <span class="status-label">
-                <span class="status-icon">📷</span>cam3
-              </span>
-              <div class="status-indicator">
-                <span class="dot green"></span>
-                <span>連線</span>
-              </div>
-            </div>
-          </div>
-          <div class="status-row">
-            <span class="status-label"><span class="status-icon">🔥</span>加熱溫度</span>
-            <div class="status-indicator">
-              <span class="dot yellow" id="heatDot"></span>
-              <span id="heatText">36°C</span>
-            </div>
-          </div>
+          <div id="bottom-status-container"></div>
         </div>
 
         <div class="action-section">
-          <!-- <div class="section-title">原料操作</div>
-          <div class="action-grid">
-            <button class="btn btn-purple" onclick="handleRefill('peanut')">📥 補充花生</button>
-            <button class="btn btn-purple" onclick="handleRefill('anchovy')">📥 補充小魚乾</button>
-            <button class="btn btn-blue" onclick="sendAction('pan_heat')">🔥 加熱花生</button>
-          </div> -->
           <div class="section-title" style="margin-top: 15px;">製作程序</div>
           <div class="action-grid">
-            <!-- <button class="btn btn-orange" onclick="sendAction('toggle_heat')" style="grid-column: span 2;"><i>🔥</i>加熱花生 / 溫控</button> -->
-            <button class="btn btn-green" onclick="sendAction('serve_waffle')"><i> 🧇 </i>製作鬆餅</button>
-            <button class="btn btn-green" onclick="sendAction('serve_peanuts')"><i>🥜</i>製作花生</button>
             <button class="btn btn-purple" onclick="openModal()"><i>📥</i>原料操作</button>
           </div>
           <div id="ingredientModal" class="modal-overlay" onclick="closeModal()">
             <div class="modal-content" onclick="event.stopPropagation()">
-              <div class="modal-header" style="background-color: #81D8D0; color: white; padding: 15px; border-radius: 5px 5px 0 0; margin: -20px -20px 20px -20px; text-align: center; display: block;">
-                  <h3 style="margin: 0; font-size: 20px;">原料操作</h3>
-                  </div>
-              <div class="modal-body">
-                <button class="btn btn-purple" onclick="handleRefill('peanut'); closeModal()">📥 補充花生</button>
-                <button class="btn btn-purple" onclick="handleRefill('anchovy'); closeModal()">📥 補充小魚乾</button>
-                <button class="btn btn-blue" onclick="sendAction('pan_heat'); closeModal()">🔥 加熱花生</button>
+              <div id="modalHeader" class="modal-header" style="background-color: #81D8D0; color: white; padding: 15px; border-radius: 5px 5px 0 0; margin: -20px -20px 20px -20px; text-align: center; display: block;">
+                <h3 id="modalTitle" style="margin: 0; font-size: 20px;">原料操作</h3>
+              </div>
+              <div id="modalBody" class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
               </div>
             </div>
           </div>
@@ -683,45 +593,11 @@
       <div class="workflow-editor">
 
         <!-- 左：流程庫 -->
-        <div class="workflow-panel"style="max-height: 725px;overflow-y: auto;">
+        <div class="workflow-panel" style="max-height: 725px; overflow-y: auto;">
           <h3>可用流程</h3>
           <div class="palette">
-            <div class="step-item step-peanut" draggable="true" data-step="get_spoon">🥄 Get Spoon</div>
-            <div class="step-item step-peanut" draggable="true" data-step="spoon_peanuts">🥜 Spoon Peanuts</div>
-            <div class="step-item step-peanut" draggable="true" data-step="drop_spoon">🔄 Drop Spoon</div>
-            <div class="step-item step-waffle" draggable="true" data-step="Open1stLid">🍴 Open1stLid</div>
-            <div class="step-item step-waffle" draggable="true" data-step="Close1stLid">🍴 Close1stLid</div>
-            <div class="step-item step-waffle" draggable="true" data-step="Open2ndLid">🍴 Open2ndLid</div>
-            <div class="step-item step-waffle" draggable="true" data-step="Close2ndLid">🍴 Close2ndLid</div>
-            <div class="step-item module-item" draggable="true" data-step="Pour1stBatterModule" style="border-left: 5px solid #bc8047;">
-              <div class="module-title">🥣 1st 倒鬆餅醬</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)</div>
             </div>
-            <div class="step-item module-item" draggable="true" data-step="Cook1stWaffleModule" style="border-left: 5px solid #AB47BC;">
-              <div class="module-title">🥣 1st 做鬆餅</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(關蓋子 ➔ 等待鬆餅)</div>
-            </div>
-            <div class="step-item module-item" draggable="true" data-step="Serve1stWaffleModule" style="border-left: 5px solid #AB47BC;">
-              <div class="module-title">🥣1st serve鬆餅</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(開蓋子 ➔ 插鬆餅)</div>
-            </div>
-
-            <div class="step-item module-item" draggable="true" data-step="Pour2ndBatterModule" style="border-left: 5px solid #bc8047;">
-              <div class="module-title">🥣 2nd 倒鬆餅醬</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(拿杯子 ➔ 倒麵糊 ➔ 放回杯子)</div>
-            </div>
-            <div class="step-item module-item" draggable="true" data-step="Cook2ndWaffleModule" style="border-left: 5px solid #AB47BC;">
-              <div class="module-title">🥣 2nd 做鬆餅</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(關蓋子 ➔ 等待鬆餅[請拖拉等待秒數]))</div>
-            </div>
-            <div class="step-item module-item" draggable="true" data-step="Serve2ndWaffleModule" style="border-left: 5px solid #AB47BC;">
-              <div class="module-title">🥣2nd serve鬆餅</div>
-              <div class="module-details" style="font-size: 10px; opacity: 0.7; font-weight: normal;">(開蓋子 ➔ 插鬆餅)</div>
-            </div>
-            <div class="step-item param-step" draggable="true" data-step="WaitSeconds" data-label="⏱ 等待" data-param="seconds" style="border-left: 5px solid #14a800;">⏱ 等待（秒）</div>
-          </div>
         </div>
-
         <!-- 右：實際流程 -->
         <div class="workflow-panel"style="max-height: 725px;overflow-y: auto;">
           <h3>執行流程</h3>
@@ -758,11 +634,105 @@
     </div>
   </div>
   <script>
+    /* =========================region Global State & Config  ========================= */
     let bridge = null;
+    let UI_CONFIG = null;
 
-    /* =========================
-    * 系統訊息顯示
-    * ========================= */
+    let draggingItem = null;
+    let dragSource = null;
+
+    let refillState = {
+      peanut: "blue",
+      anchovy: "blue"
+    };
+    let currentRefillItem = "";
+    /* ================================================== */
+    function loadConfigFiles(input) {
+      const files = Array.from(input.files);
+      if (files.length === 0) return;
+
+      let loadedConfigs = [];
+      let index = 0;
+
+      function readNext() {
+          if (index >= files.length) {
+              console.log("所有設定檔讀取完成:", loadedConfigs);
+              UI_CONFIG = mergeConfigs(loadedConfigs);
+
+              initUI();
+              resetWorkflowList();
+              refreshWorkflowPreview();
+
+              setSystemMsg(
+                  `系統訊息：已載入 ${files.length} 個設定檔`
+              );
+              return;
+          }
+
+          const file = files[index];
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+              try {
+                  const configData = JSON.parse(e.target.result);
+                  loadedConfigs.push({
+                      name: file.name,
+                      data: configData
+                  });
+                  console.log(`✔ 已載入: ${file.name}`);
+              } catch (err) {
+                  alert(`設定檔格式錯誤：${file.name}`);
+                  console.error(err);
+              } finally {
+                  index++;
+                  readNext();
+              }
+          };
+
+          reader.readAsText(file);
+      }
+
+      readNext();
+    }
+    function mergeConfigs(configList) {
+      const merged = {
+          sensors: [],
+          actions: [],
+          modal_actions: [],
+          standard_workflows: [],
+      };
+
+      configList.forEach(cfg => {
+          const data = cfg.data;
+
+          // sensors 疊加
+          if (Array.isArray(data.sensors)) {
+              merged.sensors.push(...data.sensors);
+          }
+
+          // actions 疊加
+          if (Array.isArray(data.actions)) {
+              merged.actions.push(...data.actions);
+          }
+
+          // modal actions 疊加
+          if (Array.isArray(data.modal_actions)) {
+              merged.modal_actions.push(...data.modal_actions);
+          }
+
+          // standard workflow（先給最直覺：後面的為主）
+          if (data.standard_workflow) {
+              merged.standard_workflows.push({
+                  id: cfg.name,                // 或你自訂 id
+                  label: data.standard_workflow.button_label,
+                  steps: data.standard_workflow.steps
+              });
+          }
+        });
+      return merged;
+    }
+
+/* =========================region Utility Functions========================= */
     function setSystemMsg(text) {
       const el = document.getElementById("systemMsg");
       if (!el) {
@@ -772,7 +742,26 @@
       el.textContent = text;
     }
 
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll(".step-item:not(.dragging)")];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
 
+    function printCurrentWorkflow() {
+      const steps = [...workflowList.querySelectorAll(".step-item")]
+        .map(el => el.dataset.step);
+      console.log("當前執行流程:", steps);
+    }
+/* ================================================== */
+/* ======================Qt Bridge & Backend Communication============================ */
     function initBridge() {
       if (typeof qt === "undefined" || !qt.webChannelTransport) {
         setSystemMsg("（非 Qt WebEngine 環境）");
@@ -786,21 +775,17 @@
         /* ===== 系統 / 動作狀態 ===== */
         if (bridge.statusChanged) {
           bridge.statusChanged.connect(function (msg) {
-            console.log("WEB RECEIVED status:", msg);
             setSystemMsg(msg);
           });
         }
 
-        /* ===== 溫度即時更新 ===== */
         if (bridge.tempChanged) {
           bridge.tempChanged.connect(function (temp) {
-            console.log("WEB RECEIVED temp:", temp);
-
             const dot = document.getElementById("heatDot");
             const text = document.getElementById("heatText");
             if (!dot || !text) return;
 
-            text.textContent = temp.toFixed(1) + " °C";
+            text.textContent = temp.toFixed(1) ;
             if (temp < 160) {
               dot.className = "dot gray";
             } else if (temp < 180) {
@@ -810,41 +795,57 @@
             }
           });
         }
-        
-        /* ===== spoon status 即時更新 ===== */
-        bridge.grabbingSpoonChanged.connect(function(isGrabbing) {
-          const dot = document.getElementById("shovelDot");
-          const text = document.getElementById("shovelText");
-          if (!dot || !text) return;
 
-          if (isGrabbing) {
-            dot.className = "dot green";
-            text.textContent = "拿起";
-          } else {
-            dot.className = "dot gray";
-            text.textContent = "放下";
-          }
-        });
+        /* ===== 鏟子狀態更新 (對應 Config 的 id: "shovel") ===== */
+        if (bridge.grabbingSpoonChanged) {
+          bridge.grabbingSpoonChanged.connect(function(isGrabbing) {
+            const dot = document.getElementById("shovelDot");
+            const text = document.getElementById("shovelText");
+            if (!dot || !text) return;
 
-        /* ===== peanuts status 即時更新 ===== */
-        bridge.peanutStatusChanged.connect(function(status) {
-          const dot = document.getElementById("peanutDot");
-          const text = document.getElementById("peanutText");
+            if (isGrabbing) {
+              dot.className = "dot green";
+              text.textContent = "拿起";
+            } else {
+              dot.className = "dot gray";
+              text.textContent = "放下";
+            }
+          });
+        }
 
-          if (status === "sufficient") {
-            dot.className = "dot green";
-            text.textContent = "充足";
-          } else if (status === "insufficient") {
-            dot.className = "dot red";
-            text.textContent = "不足";
-          } else if (status === "operating") {
-            dot.className = "dot yellow";
-            text.textContent = "操作中";
-          }
-        });
+        /* ===== 花生狀態更新 (對應 Config 的 id: "peanut") ===== */
+        if (bridge.peanutStatusChanged) {
+          bridge.peanutStatusChanged.connect(function(status) {
+            const dot = document.getElementById("peanutDot");
+            const text = document.getElementById("peanutText");
+            if (!dot || !text) return;
+
+            if (status === "sufficient") {
+              dot.className = "dot green";
+              text.textContent = "充足";
+            } else if (status === "insufficient") {
+              dot.className = "dot red";
+              text.textContent = "不足";
+            } else if (status === "operating") {
+              dot.className = "dot yellow";
+              text.textContent = "操作中";
+            }
+          });
+        }
       });
     }
 
+    function sendAction(actionKey) {
+      if (!bridge || !bridge.sendAction) {
+        setSystemMsg("（非 Qt）執行：" + actionKey);
+        return;
+      }
+
+      console.log("WEB sendAction:", actionKey);
+      bridge.sendAction(actionKey);
+    }
+/* ================================================== */    
+/* ====================Page Navigation============================== */    
     function goWorkflowPage() {
       const main = document.getElementById("page-main");
       const flow = document.getElementById("page-workflow");
@@ -860,37 +861,29 @@
       flow.classList.add("active");
     }
 
-    /* =========================
-    * Web → Qt 動作呼叫
-    * ========================= */
-    function sendAction(actionKey) {
-      if (!bridge || !bridge.sendAction) {
-        setSystemMsg("（非 Qt）執行：" + actionKey);
-        return;
+    function goMainPage() {
+      const main = document.getElementById("page-main");
+      const flow = document.getElementById("page-workflow");
+      if (main && flow) {
+        flow.classList.remove("active");
+        main.classList.add("active");
       }
-
-      console.log("WEB sendAction:", actionKey);
-      bridge.sendAction(actionKey);
     }
-
-
-    let draggingItem = null;
-    let dragSource = null;
-    /* =========================
-    * 拖放流程設定功能
-    * ========================= */
+/* ================================================== */ 
+/* =====================Workflow Drag & Drop============================= */ 
     // --- 1. 左側流程庫（來源） ---
-    document.querySelectorAll(".palette .step-item").forEach(item => {
-      item.addEventListener("dragstart", (e) => {
-        dragSource = "palette";
-        draggingItem = item;
-        item.classList.add("dragging");
-      });
+    function addPaletteDragHandlers(item) {
+        item.addEventListener("dragstart", (e) => {
+            dragSource = "palette";
+            draggingItem = item;
+            item.classList.add("dragging");
+        });
 
-      item.addEventListener("dragend", () => {
-        item.classList.remove("dragging");
-      });
-    });
+        item.addEventListener("dragend", () => {
+            item.classList.remove("dragging");
+        });
+    }
+    
     function enhanceParamStepIfNeeded(stepEl) {
       if (stepEl.dataset.param === "seconds") {
         if (stepEl.querySelector("input")) return;
@@ -909,10 +902,8 @@
     const workflowList = document.getElementById("workflowList");
 
     workflowList.addEventListener("dragover", e => {
-      e.preventDefault(); // 允許放置
+      e.preventDefault();
       const afterElement = getDragAfterElement(workflowList, e.clientY);
-      
-      // 如果是內部排序，給予即時預覽
       if (dragSource === "workflow" && draggingItem) {
         if (afterElement == null) {
           workflowList.appendChild(draggingItem);
@@ -924,16 +915,14 @@
 
     workflowList.addEventListener("drop", e => {
       e.preventDefault();
-      
-      // 移除提示文字
+
       const hint = workflowList.querySelector(".hint");
       if (hint) hint.remove();
 
       if (dragSource === "palette") {
-        // 從左邊拉進來：複製新元素
         const clone = draggingItem.cloneNode(true);
         clone.classList.remove("dragging");
-        addWorkflowDragHandlers(clone); // 綁定右側專用事件
+        addWorkflowDragHandlers(clone); 
         enhanceParamStepIfNeeded(clone);
 
         const afterElement = getDragAfterElement(workflowList, e.clientY);
@@ -944,6 +933,7 @@
         }
       }
       printCurrentWorkflow();
+      refreshWorkflowPreview();
     });
 
     // --- 3. 實現「往左拉回刪除」的功能 ---
@@ -955,6 +945,7 @@
         draggingItem.remove(); // 直接移除該元素
         console.log("已從流程中移除項目");
         printCurrentWorkflow();
+        refreshWorkflowPreview(); 
       }
     });
 
@@ -977,102 +968,79 @@
       item.addEventListener("dblclick", () => {
         item.remove();
         printCurrentWorkflow();
+        refreshWorkflowPreview(); 
       });
     }
+    function resetWorkflowList() {
+      const workflowList = document.getElementById("workflowList");
+      if (!workflowList) return;
 
-    function getDragAfterElement(container, y) {
-      const draggableElements = [...container.querySelectorAll(".step-item:not(.dragging)")];
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
+      workflowList.innerHTML = `
+          <div class="hint">⬅ 從左側拖拉流程到這裡</div>
+      `;
     }
 
-    function printCurrentWorkflow() {
-      const steps = [...workflowList.querySelectorAll(".step-item")]
-        .map(el => el.dataset.step);
-      console.log("當前執行流程:", steps);
-    }
-
-
-    // 1. 定義標準程序 (預設值)
-    const defaultPeanutWorkflow = [
-      { id: "get_spoon", name: "get_spoon" },
-      { id: "spoon_peanuts", name: "spoon_peanuts" },
-      { id: "drop_spoon", name: "drop_spoon" }
-    ];
-
-    // 2. 更新主畫面預覽的函數
+/* ================================================== */
+/* =====================Workflow Preview============================= */
     function refreshWorkflowPreview() {
       const workflowList = document.getElementById("workflowList");
       const previewContainer = document.getElementById("mainWorkflowPreview");
-      const runBtnText = document.querySelector("#runCustomBtn span");
+      const runBtn = document.getElementById("runCustomBtn");
 
       if (!workflowList || !previewContainer) return;
 
       const customSteps = [...workflowList.querySelectorAll(".step-item")];
+      if (customSteps.length === 0) {
+        previewContainer.innerHTML = `<span class="hint" style="font-size:12px;">(目前無自定義流程)</span>`;
+        return; // ⭐ 直接結束，避免沿用上一輪渲染
+      }
+
       let displayData = [];
       let isCustom = customSteps.length > 0;
 
       if (isCustom) {
-        // displayData = customSteps.map(el => ({ name: el.textContent.trim() }));
         displayData = customSteps.map(el => {
-        const stepID = el.dataset.step;
+          const stepID = el.dataset.step;
 
-        // ⭐ 情況 1：等待秒數（param step）
-        const input = el.querySelector("input");
-        if (input) {
-          const seconds = input.value || 0;
-          return {
-            name: `⏱ 等待 ${seconds} 秒`
-          };
-        }
+          // 情況 1：等待秒數
+          const input = el.querySelector("input");
+          if (input) {
+            return { name: `⏱ 等待 ${input.value || 0} 秒` };
+          }
 
-        // ⭐ 情況 2：模組（可先只顯示名稱）
-        if (MODULE_DEFINITIONS && MODULE_DEFINITIONS[stepID]) {
-          return {
-            name: `🧩 ${el.querySelector(".module-title")?.textContent || stepID}`
-          };
-        }
+          // 情況 2：模組
+          if (typeof MODULE_DEFINITIONS !== 'undefined' && MODULE_DEFINITIONS[stepID]) {
+            return { name: `🧩 ${el.querySelector(".module-title")?.textContent || stepID}` };
+          }
 
-        // ⭐ 情況 3：一般 step
-        return {
-          name: el.textContent.trim()
-        };
-      });
-        if(runBtnText) runBtnText.textContent = "執行自定義流程";
+          // 情況 3：一般 step (從 actions 找漂亮的名稱，找不到就用 textContent)
+          const actionCfg = UI_CONFIG.actions.find(a => a.action_id === stepID);
+          return { name: actionCfg ? actionCfg.label : el.textContent.trim() };
+        });
+
+        if (runBtn) runBtn.textContent = "🚀 執行自定義流程";
       } else {
-        displayData = defaultPeanutWorkflow;
-        if(runBtnText) runBtnText.textContent = "執行標準程序";
+        displayData = UI_CONFIG.standard_workflow.steps.map(stepID => {
+          const actionCfg = UI_CONFIG.actions.find(a => a.action_id === stepID);
+          return { name: actionCfg ? actionCfg.label : stepID };
+        });
+        
+        // ⭐ 改動：使用 Config 內的按鈕文字
+        if (runBtn) runBtn.textContent = UI_CONFIG.standard_workflow.button_label;
       }
 
       // 渲染標籤
       previewContainer.innerHTML = displayData.map((step, index) => {
-        const arrow = index < displayData.length - 1 ? '<span style="margin: 0 8px; color: #FFFFFF; font-weight: 900; font-size: 20px; line-height: 1;">➔</span>' : '';
-        return `
-        <div class="step-badge" style="background: #FFFFFF; color: #0369A1; border: 2px solid #FFFFFF; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold;padding: 5px 12px;border-radius: 8px;">
-                  ${step.name}
-                </div>${arrow}`;
+        const arrow = index < displayData.length - 1 ? '<span style="margin: 0 8px; color: #FFFFFF; font-weight: 900; font-size: 20px;">➔</span>' : '';
+        return `<div class="step-badge" style="background: #FFFFFF; color: #0369A1; border: 2px solid #FFFFFF; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; padding: 5px 12px; border-radius: 8px; display: inline-block;">${step.name}</div>${arrow}`;
       }).join('');
       
       previewContainer.innerHTML += isCustom ? 
-        '<span class="default-tag" style="background:#E9D5FF; color:#6B21A8; border-color:#D8B4FE;">自定義</span>' : 
-        '<span class="default-tag" style="background:#CFD8DC; color:#455A64; border-color:#B0BEC5;">標準</span>';
+        '<span class="default-tag" style="background:#E9D5FF; color:#6B21A8; border-color:#D8B4FE; margin-left: 10px;">自定義</span>' : 
+        '<span class="default-tag" style="background:#CFD8DC; color:#455A64; border-color:#B0BEC5; margin-left: 10px;">標準</span>';
     }
-
-    // 3. 執行「標準」流程的快捷按鈕
-    function executeStandardWorkflow() {
-      const ids = defaultPeanutWorkflow.map(s => s.id);
-      setSystemMsg("系統訊息：啟動標準製作流程");
-      if (bridge && bridge.sendAction) {
-        bridge.sendAction(JSON.stringify(ids));
-      }
-    }
+/* ================================================== */
+/* =======================Workflow Execution=========================== */
     const MODULE_DEFINITIONS = {
       "Pour1stBatterModule": [
         "Grab1stBatter",
@@ -1097,7 +1065,7 @@
         "serve_2nd_stove"
       ]
     };
-    // 4. 執行「當前排定」流程的按鈕 (會判斷有沒有自定義)
+
     function executeCurrentWorkflow() {
       const workflowList = document.getElementById("workflowList");
       const customSteps = [...workflowList.querySelectorAll(".step-item")];
@@ -1108,13 +1076,10 @@
         customSteps.forEach(el => {
           const stepID = el.dataset.step;
 
-          // 1️⃣ Module
-          if (MODULE_DEFINITIONS[stepID]) {
+          if (typeof MODULE_DEFINITIONS !== 'undefined' && MODULE_DEFINITIONS[stepID]) {
             finalIDs.push(...MODULE_DEFINITIONS[stepID]);
             return;
           }
-
-          // 2️⃣ Param step（例如 WaitSeconds）
           const input = el.querySelector("input");
           if (input) {
             finalIDs.push({
@@ -1123,16 +1088,12 @@
             });
             return;
           }
-
-          // 3️⃣ Normal step
           finalIDs.push(stepID);
         });
-
-
         setSystemMsg("系統訊息：啟動自定義程序");
       } else {
-        finalIDs = defaultPeanutWorkflow.map(s => s.id);
-        setSystemMsg("系統訊息：啟動標準程序...");
+        finalIDs = UI_CONFIG.standard_workflow.steps;
+        setSystemMsg("系統訊息：" + UI_CONFIG.standard_workflow.button_label);
       }
 
       console.log("最終執行清單:", finalIDs);
@@ -1141,46 +1102,57 @@
         bridge.sendAction("run_workflow:" + JSON.stringify(finalIDs));
       }
     }
+/* ================================================== */
 
 
-    // 5. 回主頁時自動刷新預覽
-    function goMainPage() {
-      const main = document.getElementById("page-main");
-      const flow = document.getElementById("page-workflow");
-      if (main && flow) {
-        flow.classList.remove("active");
-        main.classList.add("active");
-        refreshWorkflowPreview(); // 加入這一行
-      }
+    function closeColorModal() {
+      // 隱藏視窗
+      document.getElementById('colorModal').style.display = 'none';
+      document.getElementById('colorModal').style.display = 'none';
     }
 
-    // 6. 初始化也讀取一次
-    window.addEventListener("load", () => {
-      refreshWorkflowPreview();
-    });
-    // 1. 用物件分別儲存花生和小魚乾的顏色，初始值都設為 'blue'
-    let refillState = {
-        peanut: "blue",
-        anchovy: "blue"
-    };
-    let currentRefillItem = ""; // 用來紀錄當前是哪種原料
+    
+
+    function switchCamera(type) {
+      const imgElement = document.getElementById("mainStream");
+
+      imgElement.style.transition = "none";
+      imgElement.style.opacity = "0";
+
+      let url = "http://127.0.0.1:5000/video_feed/";
+
+      if (type === "rtsp1") url += "cam1";
+      else if (type === "rtsp2") url += "cam2";
+      else if (type === "rtsp3") url += "cam3";
+      else url += "usb";
+
+      // 當第一張 frame 到了才淡入
+      imgElement.onload = function () {
+          imgElement.style.transition = "opacity 0.25s ease-in-out";
+          imgElement.style.opacity = "1";
+          imgElement.onload = null;
+      };
+
+      // ⭐ 關鍵：直接換，不加 ?t
+      imgElement.src = url;
+    }
+
+
+// =============================region Modal & Refill Interaction========================//
+    function openModal() {
+        document.getElementById('ingredientModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('ingredientModal').style.display = 'none';
+    }
 
     function handleRefill(item) {
       currentRefillItem = item; 
       const header = document.querySelector('.modal-header');
       const colorInput = document.getElementById('cupColorInput');
       colorInput.value = refillState[item];
-      // 根據傳入的 item 變更標題文字
-      // if(item === 'peanut') header.innerText = "補充花生 - 選擇杯子顏色";
-      // if(item === 'anchovy') header.innerText = "補充小魚乾 - 選擇杯子顏色";
-      
       document.getElementById('colorModal').style.display = 'flex';
-    }
-
-    function closeColorModal() {
-      // 隱藏視窗
-      document.getElementById('colorModal').style.display = 'none';
-      document.getElementById('colorModal').style.display = 'none';
     }
 
     // 設定快速選擇顏色
@@ -1206,64 +1178,186 @@
       
       closeColorModal();
     }
-
-    function switchCamera(type) {
-        const imgElement = document.getElementById('mainStream');
-        
-        // 1. 立即隱藏影像（變為黑色背景，假設父層背景是黑色）
-        imgElement.style.opacity = "0";
-        imgElement.src = ""; 
-        
-        console.log("正在切換至:", type);
-
-        // 2. 處理狀態框亮燈（移到前面確保點擊即反饋）
-        document.querySelectorAll('.status-row-compact-width').forEach(el => {
-            el.style.backgroundColor = "rgba(255, 255, 255, 0.4)";
-        });
-        if (window.event && window.event.currentTarget) {
-            window.event.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
-        }
-
-        setTimeout(() => {
-            const time = new Date().getTime();
-            let url = "http://127.0.0.1:5000/video_feed_";
-            
-            if (type === 'rtsp1') url += "rtsp1";
-            else if (type === 'rtsp2') url += "rtsp2";
-            else if (type === 'rtsp3') url += "rtsp3"; // 補上 cam3
-            else url += "usb";
-
-            // 3. 監聽 onload 事件：當第一張正確的影格到達瀏覽器時觸發
-            imgElement.onload = function() {
-                // 稍微延遲一小下（100ms），確保避開最後一絲可能的綠光
-                setTimeout(() => {
-                    imgElement.style.transition = "opacity 0.4s ease-in-out";
-                    imgElement.style.opacity = "1";
-                }, 100);
-                // 清除 onload 避免重複觸發串流中的每一影格
-                imgElement.onload = null;
-            };
-
-            imgElement.src = url + "?t=" + time;
-        }, 150); // 給後端 150ms 釋放舊連線
-    }
-
-
-    function openModal() {
-        document.getElementById('ingredientModal').style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('ingredientModal').style.display = 'none';
-    }
-
-    // 可選：按下 ESC 鍵也可以關閉視窗
     window.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeModal();
-        }
+      if (event.key === 'Escape') {
+          closeModal();
+      }
     });
-    window.addEventListener("load", initBridge);
+
+    function executeStandardWorkflow(workflow) {
+      console.log("執行標準流程:", workflow);
+
+      if (bridge && bridge.sendAction) {
+          bridge.sendAction(
+              "run_workflow:" + JSON.stringify(workflow.steps)
+          );
+      }
+
+      setSystemMsg(`系統訊息：執行 ${workflow.label}`);
+    }
+
+//=========================================================================================
+    function initUI() 
+    {
+      const cameraArea = document.getElementById('fixed-camera-area');
+      const sensorArea = document.getElementById('dynamic-sensor-area');
+      if (!UI_CONFIG) {
+        // 不要覆蓋整個 dynamic-status-container
+        if (sensorArea) sensorArea.innerHTML = '<p style="color:gray;">請載入設定檔...</p>';
+        return;
+      }
+
+      // --- 1. 設備監控與攝影機 ---
+
+      if (cameraArea) {
+        cameraArea.innerHTML = ''; 
+        const fixedCams = [
+            { id: "cam1", type: "rtsp1" },
+            { id: "cam2", type: "video_feed_usb" },
+            { id: "cam3", type: "rtsp2" }
+        ];
+
+        fixedCams.forEach(cam => {
+          const camDiv = document.createElement('div');
+          camDiv.className = 'status-row status-row-compact-width';
+          camDiv.style.cursor = 'pointer';
+          camDiv.onclick = () => switchCamera(cam.type);
+          
+          camDiv.innerHTML = `
+              <span class="status-label"><span class="status-icon">📷</span>${cam.id}</span>
+              <div class="status-indicator">
+                <span class="dot green"></span>
+                <span>連線</span>
+              </div>
+          `;
+          cameraArea.appendChild(camDiv);
+        });
+      }
+      if (sensorArea) {
+        sensorArea.innerHTML = ''; 
+        UI_CONFIG.sensors.forEach(sensor => {
+          const sensorDiv = document.createElement('div');
+          sensorDiv.className = 'status-row status-row-compact-width';
+          const iconHtml = sensor.icon ? `<span class="status-icon">${sensor.icon}</span>` : '';
+          sensorDiv.innerHTML = `
+            <span class="status-label">
+              ${iconHtml}${sensor.label}
+            </span>
+            <div class="status-indicator">
+              <span class="dot gray" id="${sensor.key}Dot"></span>
+              <span id="${sensor.key}Text"></span>${sensor.unit || ''}
+            </div>
+          `;
+          sensorArea.appendChild(sensorDiv);
+        });
+      }
+
+      // --- 2. 流程設定頁：可用流程庫 (Palette) ---
+      const palette = document.querySelector('.palette');
+      if (palette) {
+          palette.innerHTML = ''; 
+          UI_CONFIG.actions.forEach(action => {
+            const step = document.createElement('div');
+            step.className = `step-item ${action.color || 'step-peanut'}`;
+            step.draggable = true;
+            step.dataset.step = action.action_id; 
+            if (action.is_module) {
+                const borderCol = action.color === 'module-brown' ? '#bc8047' : '#AB47BC';
+                step.style.borderLeft = `5px solid ${borderCol}`;
+                step.innerHTML = `
+                    <div class="module-title">🥣 ${action.label}</div>
+                    <div class="module-details" style="font-size: 10px; opacity: 0.7;">${action.details}</div>
+                `;
+            } else {
+                step.innerHTML = `✨ ${action.label}`;
+            }
+            addPaletteDragHandlers(step);
+            palette.appendChild(step);
+        });
+
+        // 固定的等待秒數按鈕
+        const waitStep = document.createElement('div');
+        waitStep.className = 'step-item param-step';
+        waitStep.draggable = true;
+        waitStep.dataset.step = 'WaitSeconds';
+        waitStep.dataset.param = 'seconds';
+        waitStep.style.borderLeft = '5px solid #14a800';
+        waitStep.innerHTML = '⏱ 等待（秒）';
+        addPaletteDragHandlers(waitStep);
+        palette.appendChild(waitStep);
+      }
+
+      // --- 3. 製作程序區 (按鈕) ---
+      const actionGrid = document.querySelector('.action-section .action-grid');
+      if (actionGrid) 
+      {
+        actionGrid.innerHTML = '';
+
+        if (Array.isArray(UI_CONFIG.standard_workflows)) {
+          UI_CONFIG.standard_workflows.forEach(workflow => {
+              const btn = document.createElement('button');
+              btn.className = "btn btn-blue";
+              btn.textContent = `執行標準 ${workflow.label || "製作程序"}`;
+              btn.onclick = () => executeStandardWorkflow(workflow);
+              actionGrid.appendChild(btn);
+          });
+        }
+        const modalBtn = document.createElement('button');
+        modalBtn.className = "btn btn-secondary";
+        modalBtn.onclick = openModal;
+        modalBtn.innerHTML = `<i>📥</i> 原料操作`;
+        actionGrid.appendChild(modalBtn);
+      }
+
+
+      // --- 4. 動態生成「原料操作彈窗」按鈕 ---
+      const modalBody = document.getElementById('modalBody');
+      const modalTitle = document.getElementById('modalTitle');
+
+      if (modalBody) 
+      {
+        // 無論有沒有新資料，進來第一件事就是把舊的清空
+        modalBody.innerHTML = ''; 
+
+        // 檢查新 Config 是否有資料
+        if (UI_CONFIG.modal_actions && Array.isArray(UI_CONFIG.modal_actions)) {
+          
+          // 更新標題 (如果有設定的話)
+          if (modalTitle && UI_CONFIG.modal_title) {
+              modalTitle.textContent = UI_CONFIG.modal_title;
+          }
+
+          UI_CONFIG.modal_actions.forEach(act => {
+            const btn = document.createElement('button');
+            btn.className = `btn ${act.color || 'btn-purple'}`;
+            btn.innerHTML = `📥 ${act.label}`;
+            
+            btn.onclick = () => {
+                if (act.type === "refill") {
+                    handleRefill(act.action_id);
+                } else {
+                    sendAction(act.action_id);
+                }
+                closeModal();
+            };
+            modalBody.appendChild(btn);
+          });
+        } 
+        else 
+        {
+          modalBody.innerHTML = '<p style="color:gray; padding:10px; text-align:center;">此模式無原料操作項目</p>';
+          if (modalTitle) modalTitle.textContent = "原料操作"; 
+        }
+      }  
+    }
+  
+
+    window.addEventListener("load", () => {
+        initUI();       
+        initBridge();   // 2. 再啟動 Qt 連線
+        refreshWorkflowPreview(); 
+    });
+    
   </script>
 </body>
 </html>
