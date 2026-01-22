@@ -62,13 +62,11 @@ def zed_worker():
     print("[ZED] worker started")
 
     while running:
-        zed_cam.camera.grab()
-        zed_cam.camera.retrieve_image(zed_cam.left_image, sl.VIEW.LEFT)
-
-        frame_raw = zed_cam.left_image.get_data()[:, :, :3] 
-        # frame_raw = cv2.cvtColor(frame_raw, cv2.COLOR_RGBA2BGR)
-
+        time.sleep(0.1)
+        status, left_image, right_image = zed_cam.capture_images()
+        ts = int(time.time() * 1000)
         # ===== 給 Flask UI=====
+        frame_raw = left_image
         h, w, _ = frame_raw.shape
         frame_ui = frame_raw[:, :w // 1] 
 
@@ -79,9 +77,28 @@ def zed_worker():
         if ok:
             pub.send_multipart([
                 b"usb_cam",
-                str(int(time.time() * 1000)).encode(),
+                str(ts).encode(),
                 jpg.tobytes()
             ])
+
+        # === for another python process ===
+        left_image  = np.ascontiguousarray(left_image)
+        right_image = np.ascontiguousarray(right_image)
+        pub.send_multipart([
+            b"zed_raw",
+            str(ts).encode(),
+
+            # left image
+            str(left_image.shape).encode(),        # e.g. "(720,1280,3)"
+            left_image.dtype.str.encode(),          # e.g. "|u1"
+            left_image.tobytes(),
+
+            # right image
+            str(right_image.shape).encode(),
+            right_image.dtype.str.encode(),
+            right_image.tobytes(),
+        ])
+
 
     zed_cam.camera.close()
 
