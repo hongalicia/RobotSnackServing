@@ -16,6 +16,7 @@ RTSP_SOURCES = {
     "cam2": "rtsp://root:admin@169.254.183.33:554/snl/live/2/1",
     "usb":  None,
     "ensenso": None,
+    "cam4": None,
 }
 
 # =========================
@@ -86,7 +87,7 @@ def zed_worker():
 
 
 def usb_worker():
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+    cap = cv2.VideoCapture(3, cv2.CAP_V4L2)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -147,6 +148,38 @@ def ensenso_worker():
         except Exception as e:
             print("[ENSENSO] error:", e)
             time.sleep(0.1)
+
+def zmq_annotated_worker():
+    ctx = zmq.Context.instance()
+    sock = ctx.socket(zmq.SUB)
+    sock.connect("tcp://192.168.1.133:9999")
+
+    # ⭐ 注意：一定要 bytes
+    sock.setsockopt(zmq.SUBSCRIBE, b"annotated_frame")
+
+    print("[ZMQ] annotated_frame worker started")
+
+    while running:
+        try:
+            topic, data = sock.recv_multipart()
+
+            if topic != b"annotated_frame":
+                continue
+
+            frame = cv2.imdecode(
+                np.frombuffer(data, dtype=np.uint8),
+                cv2.IMREAD_COLOR
+            )
+            if frame is None:
+                continue
+
+            with frame_locks["cam4"]:
+                latest_frames["cam4"] = frame
+
+        except Exception as e:
+            print("[ZMQ] error:", e)
+            time.sleep(0.1)
+
 # =========================
 # MJPEG Generator（送最新 frame）
 # =========================
@@ -200,8 +233,8 @@ def start_rtsp_threads():
             # t = threading.Thread(target=usb_worker, daemon=True)
             # zed
             t = threading.Thread(target=zed_worker, daemon=True)
-        elif cam_id == "ensenso":
-            t = threading.Thread(target=ensenso_worker, daemon=True)
+        elif cam_id == "cam4":
+            t = threading.Thread(target=zmq_annotated_worker, daemon=True)
         else:
             t = threading.Thread(
                 target=rtsp_worker,
