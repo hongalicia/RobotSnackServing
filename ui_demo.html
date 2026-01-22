@@ -265,7 +265,14 @@
       flex-direction: column;
       color: #444;
     }
-
+    
+    .workflow-panel-footer {
+      flex-shrink: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
     .palette,
     .workflow-list {
       flex: 1;
@@ -507,6 +514,19 @@
       font-size: 16px;
     }
 
+    .status-row.cam-active {
+      background-color: #ede9fe;
+    }
+
+    .workflow-title {
+      flex-shrink: 0;          
+      margin: 0 0 10px 0;
+    }
+    .palette-container {
+      flex: 1;                 
+      overflow-y: auto;        
+      padding-right: 6px;      
+    }
   </style>
 </head>
 
@@ -529,12 +549,12 @@
 
 
       <div class="ui-panel">
-        <div class="card" style="background: rgba(255, 255, 255, 0.2); margin-bottom: 10px; display: flex; justify-content: center; padding: 10px;">
+        <!-- <div class="card" style="background: rgba(255, 255, 255, 0.2); margin-bottom: 10px; display: flex; justify-content: center; padding: 10px;">
           <button class="btn btn-secondary" style="width: 100%; height: 45px; background: #FFF;" onclick="document.getElementById('configInput').click()">
             📁 載入設定檔 (JSON)
           </button>
           <input type="file" id="configInput" style="display: none;" accept=".json,.config" multiple onchange="loadConfigFiles(this)">
-        </div>
+        </div> -->
         <div class="top-control-bar">
           <button class="btn btn-secondary" onclick="goWorkflowPage()">⚙️ 流程設定</button>
           <button class="btn btn-secondary" onclick="sendAction('virtual_validation')">⚙️ 虛擬驗證</button>
@@ -584,8 +604,11 @@
   </div> 
   <div id="page-workflow" class="page">
     <div class="ui-panel" style="width:100%; height:100%;">
-
       <h2 style="color:#5D544F; margin-bottom:10px;">流程設定</h2>
+      <button class="btn btn-secondary" style="width: 100%; max-width: 280px;height: 45px; background: #FFF;" onclick="document.getElementById('configInput').click()">
+            📁 載入設定檔 (JSON)
+      </button>
+      <input type="file" id="configInput" style="display: none;" accept=".json,.config" multiple onchange="loadConfigFiles(this)">
       <p style="color:#5D544F; opacity:0.7;">
         從左側拖拉流程到右側，並調整執行順序
       </p>
@@ -593,13 +616,16 @@
       <div class="workflow-editor">
 
         <!-- 左：流程庫 -->
-        <div class="workflow-panel" style="max-height: 725px; overflow-y: auto;">
-          <h3>可用流程</h3>
-          <div class="palette">
-            </div>
+        <div class="workflow-panel" style=" height: 700px; display: flex; flex-direction: column;">
+          <h3 class="workflow-title">可用流程</h3>
+
+          <div class="palette-container">
+            <div class="palette"></div>
+          </div>
         </div>
+
         <!-- 右：實際流程 -->
-        <div class="workflow-panel"style="max-height: 725px;overflow-y: auto;">
+        <div class="workflow-panel"style="height: 700px;overflow-y: auto;">
           <h3>執行流程</h3>
           <div id="workflowList" class="workflow-list">
             <div class="hint">⬅ 從左側拖拉流程到這裡</div>
@@ -608,10 +634,11 @@
 
       </div>
 
-      <button class="btn btn-secondary" onclick="goMainPage()" style="margin-top:20px;">
-        ⬅ 回主頁
-      </button>
-
+      <div class="workflow-panel-footer">
+        <button class="btn btn-secondary" onclick="goMainPage()">
+          ← 回主頁
+        </button>
+      </div>
     </div>
   </div>
   <div id="colorModal" class="modal-overlay">
@@ -1115,6 +1142,7 @@
 
     function switchCamera(type) {
       const imgElement = document.getElementById("mainStream");
+      setActiveCam(type);
 
       imgElement.style.transition = "none";
       imgElement.style.opacity = "0";
@@ -1210,13 +1238,14 @@
             { id: "cam1", type: "cam1" },
             { id: "cam2", type: "cam2" },
             { id: "cam3", type: "usb" },
-            { id: "cam4", type: "ensenso" }
+            { id: "cam4", type: "cam4" }
         ];
 
         fixedCams.forEach(cam => {
           const camDiv = document.createElement('div');
           camDiv.className = 'status-row status-row-compact-width';
           camDiv.style.cursor = 'pointer';
+          camDiv.dataset.camType = cam.type;   
           camDiv.onclick = () => switchCamera(cam.type);
           
           camDiv.innerHTML = `
@@ -1346,7 +1375,18 @@
         }
       }  
     }
-  
+    
+    function setActiveCam(camType) {
+      const camRows = document.querySelectorAll(
+        '#fixed-camera-area .status-row'
+      );
+
+      camRows.forEach(row => {
+        const type = row.dataset.camType;
+        row.classList.toggle('cam-active', type === camType);
+      });
+    }
+
 
     window.addEventListener("load", () => {
         initUI();       

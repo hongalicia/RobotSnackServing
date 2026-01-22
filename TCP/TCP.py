@@ -21,6 +21,7 @@ class TcpClient:
         self.peanut_num = 0
         self.waffle_num = 0
         self.received_orders = queue.Queue()
+        self.received_cancel = queue.Queue()
 
     def connect(self):
         """連線到 Server"""
@@ -76,6 +77,12 @@ class TcpClient:
                         left_sec = self.sec.to_bytes(1, 'little')
                         send_data = b'\x88\x66\x71' + left_min + left_sec + b'\x00\x00'
                         self.check_sum(send_data)
+                    case 67:  # 'C'
+                        print("Received 'C' command.")
+                        cancel_peanut = int.from_bytes(data[3].to_bytes(1, 'little'), byteorder='little')
+                        cancel_waffle = int.from_bytes(data[4].to_bytes(1, 'little'), byteorder='little')
+                        new_cancel = order(cancel_peanut, cancel_waffle)
+                        self.received_cancel.put(new_cancel)
         else:
             print("Invalid header.")
 
@@ -105,6 +112,22 @@ class TcpClient:
         left_min = min.to_bytes(1, 'little')
         left_sec = sec.to_bytes(1, 'little')
         send_data = b'\x88\x66\x6F' + left_min + left_sec + b'\x00\x00'
+        self.check_sum(send_data)
+
+    def send_cancel_status(self, cancel_peanut, cancel_waffle, min, sec):
+        cancel_peanut_byte = cancel_peanut.to_bytes(1, 'little')
+        cancel_waffle_byte = cancel_waffle.to_bytes(1, 'little')
+        left_min = min.to_bytes(1, 'little')
+        left_sec = sec.to_bytes(1, 'little')
+        send_data = b'\x88\x66\x63' + cancel_peanut_byte + cancel_waffle_byte + left_min + left_sec
+        self.check_sum(send_data)
+
+    def send_interrupt_error(self):
+        send_data = b'\x88\x66\x69\x01\x00\x00\x00'
+        self.check_sum(send_data)
+
+    def send_exception_error(self):
+        send_data = b'\x88\x66\x69\x02\x00\x00\x00'
         self.check_sum(send_data)
 
     def send_end(self):

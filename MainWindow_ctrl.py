@@ -37,7 +37,6 @@ class main_window_ctrl(QMainWindow):
     leftTimeChanged = Signal(int)
     def __init__(self):
         super().__init__()
-        # ⭐⭐⭐ PySide6 正確寫法 ⭐⭐⭐
         profile = QWebEngineProfile.defaultProfile()
         settings = profile.settings()
 
@@ -136,6 +135,9 @@ class main_window_ctrl(QMainWindow):
             self.time_waffle_heat = (int)(self.ui.lineEdit_WaffleHeatingTime.text())
             self.thermal_threshold = (int)(self.ui.lineEdit_ThermalThreshold.text())
 
+            self.cancel_peanut = False
+            self.cancel_waffle = False
+
             if 'self.PeanutNumClassifier' not in globals():
                 try:
                     self.PeanutNumClassification_init()
@@ -211,6 +213,9 @@ class main_window_ctrl(QMainWindow):
 
         self.thread_counting_left_time = threading.Thread(target=self.count_left_time)
         self.thread_counting_left_time.start()
+
+        # self.thread_cancaling_orders = threading.Thread(target=self.cancel_orders)
+        # self.thread_cancaling_orders.start()
 
     def tcp_thermal_init(self):
         self.tcp_thermal = ThermalClient("192.168.1.133", 9060)
@@ -718,9 +723,12 @@ class main_window_ctrl(QMainWindow):
             
             self.statusChanged.emit(f"certesian_pose:{self.right_cartesian_pose}\n")
             self.rosCommunication.send_data({"type": "PTP", "cartesian_poses": [self.right_cartesian_pose], "wait_time": 0.0})
+            # response = self.rosCommunication.send_data({"type": "arm", "joints_values": [[0,0,0,0,0,0]], "wait_time": 0.0, "custom_vel": vel, "custom_acc": acc, "custom_blend": blend})
             self.wait_for_waffle_pour()
+            time.sleep(0.5)
         except Exception as e:
             self.statusChanged.emit(f"[ERROR]pour_1st_batter error: {e}\n")
+
     def pushButton_Pour2ndBatter_clicked(self):
         try:
             self.Pour2ndBatter_flow()
@@ -825,6 +833,10 @@ class main_window_ctrl(QMainWindow):
             state = self.tcp_check_waffle_lid.get_latest()
             if state.right_waffle == WafflePos.ON_UPPER_LID:
                 self.statusChanged.emit("[ERROR] Waffle on upper lid, abort opening.\n")
+                try:              
+                    self.tcp.send_interrupt_error()
+                except Exception as e:
+                    self.statusChanged.emit(f"[ERROR]tcp send_interrupt_error failed.\n")
                 return False
             
             self.run_trajectory("ROS/trajectories/grab_fork.csv", vel=100, acc=500)
@@ -1246,6 +1258,27 @@ class main_window_ctrl(QMainWindow):
         except Exception as e:
             raise e   
     
+    # def cancel_orders(self):
+    #     while self.serving_orders == True:
+    #         if self.tcp.received_cancel.empty() == True:
+    #             continue
+    #         try:
+    #             cancel_order = self.tcp.received_cancel.get()
+    #             if cancel_order.cancel_peanut is True:
+    #               self.cancel_peanut = True
+    #               self.statusChanged.emit(f"[INFO]Cancel peanut order.")
+    #             if cancel_order.cancel_waffle is True:
+    #                 self.cancel_waffle = True
+    #                 self.statusChanged.emit(f"[INFO]Cancel waffle order.")
+    #         except ValueError as e:
+    #             print(e)
+    #             self.statusChanged.emit(f"[ERROR]Clearing all remaining tasks.\n")
+    #             while not self.tcp.received_cancel.empty():
+    #                 self.tcp.received_cancel.get()
+    #             continue
+    #         except Exception as e:
+    #             self.statusChanged.emit(f"[ERROR]cancel_orders error: {e}\n")
+
     #region get order time
     def get_order_time(self, order):
         seconds = 0
