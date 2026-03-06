@@ -284,7 +284,7 @@
        <string>Down</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_WokFlip">
+     <widget class="QPushButton" name="pushButton_StirON">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -294,10 +294,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>Flip</string>
+       <string>Stir_ON</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_WokAC">
+     <widget class="QPushButton" name="pushButton_StirOFF">
       <property name="geometry">
        <rect>
         <x>340</x>
@@ -307,10 +307,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>AC</string>
+       <string>Stir_OFF</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_WokHeat">
+     <widget class="QPushButton" name="pushButton_WokHeat_ON">
       <property name="geometry">
        <rect>
         <x>150</x>
@@ -320,7 +320,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Heat</string>
+       <string>Heat_ON</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_CheckTemperature">
@@ -334,6 +334,19 @@
       </property>
       <property name="text">
        <string>Check Temperature</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_WokHeat_OFF">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>310</y>
+        <width>180</width>
+        <height>40</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Heat_OFF</string>
       </property>
      </widget>
     </widget>

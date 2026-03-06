@@ -33,8 +33,12 @@ class Wok(threading.Thread):
 
             time.sleep(0.01)
 
-    def flip(self):
-        data = b'\x88\x66\x57\x00\x00\x00\x00'
+    def stir_on(self):
+        data = b'\x88\x66\x57\x00\x01\x00\x00'  
+        self.check_sum(data)
+
+    def stir_off(self):
+        data = b'\x88\x66\x57\x00\x00\x00\x00'  
         self.check_sum(data)
 
     def home(self):
@@ -49,9 +53,12 @@ class Wok(threading.Thread):
         # data = b'\x88\x66\x41' + bytes([on_off]) + b'\x00\x00\x00'
         # self.check_sum(data)
         print("AC is called")
-
-    def heat(self):
-        data = b'\x88\x66\x48\x00\x00\x00\x00'
+    
+    def heat_on(self):
+        data = b'\x88\x66\x41\x01\x00\x00\x00' 
+        self.check_sum(data)
+    def heat_off(self):
+        data = b'\x88\x66\x41\x00\x00\x00\x00' 
         self.check_sum(data)
 
     def check_sum(self, data):
@@ -82,9 +89,12 @@ class Wok(threading.Thread):
 if __name__ == "__main__":
     wok = Wok()
     wok.home()
-    while True:
-        pass
-    # wok.flip()
+    # wok.down()
+    # wok.stir_on()
+    # while True:
+    #     pass
+    # wok.down()
+    # wok.stir_on()
     # time.sleep(5)
     # wok.home()
     # time.sleep(3)
