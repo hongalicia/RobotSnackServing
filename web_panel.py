@@ -10,7 +10,7 @@ class WebPanel(QWidget):
     def __init__(self, main_ctrl):
         super().__init__()
         self.setWindowTitle("Web Control Panel")
-        self.resize(420, 720)
+        self.resize(720, 720)
 
         layout = QVBoxLayout(self)
         self.view = QWebEngineView()

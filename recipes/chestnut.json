@@ -1,0 +1,29 @@
+{
+  "current_mode": "栗子模式",
+
+  "modal_title": "原料與設備操作",
+  "modal_actions": [
+    { "label": "補充栗子", "action_id": "refill_chestnut", "color": "btn-purple", "type": "refill" },
+    { "label": "加熱攪鍋", "action_id": "pan_heat", "color": "btn-blue", "type": "command" }
+  ],
+  
+  "sensors": [
+    { "key": "chestnut", "label": "栗子存量", "unit": "", "icon": "🌰" },
+    { "key": "shovel",   "label": "鏟子狀態", "unit": "",   "icon": "🥄" },
+    { "key": "heat",     "label": "攪鍋溫度", "unit": "°C", "icon": "🔥" }
+
+  ],
+  "actions": [
+    { "action_id": "get_spoon",   "label": "拿取勺子", "color": "step-chestnut" },
+    { "action_id": "spoon_chestnut", "label": "挖取栗子", "color": "step-chestnut" },
+    { "action_id": "drop_spoon",  "label": "放回勺子", "color": "step-chestnut" }
+  ],
+  "standard_workflow": {
+    "button_label": "栗子製作程序", 
+    "steps": [
+      "get_spoon",
+      "spoon_chestnut",   
+      "drop_spoon"
+    ]
+  }
+}

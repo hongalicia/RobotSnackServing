@@ -862,6 +862,12 @@
     }
 
     function sendAction(actionKey) {
+
+      if (actionKey === 'virtual_validation') {
+        setSystemMsg("系統訊息：虛擬驗證執行中...");
+      } else if (actionKey === 'digital_twin') {
+        setSystemMsg("系統訊息：虛實同動模式啟動...");
+      }
       if (!bridge || !bridge.sendAction) {
         setSystemMsg("（非 Qt）執行：" + actionKey);
         return;

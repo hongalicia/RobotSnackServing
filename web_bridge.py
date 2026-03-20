@@ -40,7 +40,7 @@ class WebBridge(QObject):
             elif act_name == "refill":
                 return self.ctrl.grasp_and_dump_peanuts_flow
             elif act_name == "pan_heat":
-                return self.ctrl.pan_heat
+                return self.ctrl.pan_heat_on
             elif act_name == "Grab1stBatter":
                 return self.ctrl.Grab1stBatter_flow
             elif act_name == "Pour1stBatter":

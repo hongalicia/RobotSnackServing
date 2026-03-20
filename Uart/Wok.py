@@ -54,9 +54,14 @@ class Wok(threading.Thread):
         # self.check_sum(data)
         print("AC is called")
     
+    # def heat_on(self):
+    #     data = b'\x88\x66\x41\x01\x00\x00\x00' 
+    #     self.check_sum(data)
+
     def heat_on(self):
-        data = b'\x88\x66\x41\x01\x00\x00\x00' 
+        data = b'\x88\x66\x41\x01\x01\x00\x00' 
         self.check_sum(data)
+
     def heat_off(self):
         data = b'\x88\x66\x41\x00\x00\x00\x00' 
         self.check_sum(data)
@@ -79,11 +84,11 @@ class Wok(threading.Thread):
                         case 1:
                             #self.pan_position.emit("home")
                             self.received_status.put("home")
-                            print("wok home done")
+                            print("stir home done")
                         case 2:
                             self.received_status.put("down")
                             #self.pan_position.emit("down")
-                            print("wok down done")
+                            print("stir down done")
 
 
 if __name__ == "__main__":
