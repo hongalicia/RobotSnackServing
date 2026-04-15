@@ -132,6 +132,7 @@ class main_window_ctrl(QMainWindow):
             self.pressing_button_needed = False
             self.stir_and_heat = False
             
+            self.num_orders= 0
             self.num_left_waffle = 0
             self.grabbing_spoon = False
             self.grabbingSpoonChanged.emit(False)
@@ -253,9 +254,9 @@ class main_window_ctrl(QMainWindow):
         self.wok = Wok()
         print("wok init start")
         self.thread_stir_position_check = threading.Thread(target=self.receive_stir_position)
-        self.thread_stir_position_check.start() 
-        self.check_stir_pos(PAN_POS.DOWN)
-        self.wok.stir_on()
+        self.thread_stir_position_check.start()
+        # self.wok.stir_on() 
+        # self.check_stir_pos(PAN_POS.DOWN)
 
     def cam_init(self):
         print("cam init start")
@@ -440,7 +441,7 @@ class main_window_ctrl(QMainWindow):
             image_showed = np.ascontiguousarray(image)
             imaged_saved = np.ascontiguousarray(image_enhanced)
             if save_image:
-                cv2.imwrite(f'PeanutNumberClassification/dataset/peanuts_image{int(time.time())}.png', image_showed)
+                cv2.imwrite(f'PeanutNumberClassification/dataset/peanuts_image{int(time.time())}.png', imaged_saved)
             peanuts_image = QImage(image_showed, image_showed.shape[1], image_showed.shape[0], 3 * image_showed.shape[1], QImage.Format.Format_BGR888)
             peanuts_pixmap = QPixmap.fromImage(peanuts_image)    
             peanuts_pixmap_scaled = peanuts_pixmap.scaled(self.ui.label_image_peanuts.width(), self.ui.label_image_peanuts.height(), aspectMode=Qt.AspectRatioMode.KeepAspectRatio)
@@ -465,6 +466,8 @@ class main_window_ctrl(QMainWindow):
             #     self.drop_spoon_flow()
             # if self.current_order_left_seconds > 0:
             #     self.current_order_left_seconds += 65
+            self.wok.stir_off()
+            self.check_stir_pos(PAN_POS.HOME)
             if self.grabbing_spoon == True:
                 self.drop_spoon_flow()
             data = {"actions": "go_to_default", "no_curobo": True}
@@ -534,6 +537,13 @@ class main_window_ctrl(QMainWindow):
                     data = {"actions": "spoon_peanuts_down", "no_curobo": True}
                 message = self.graspGenCommunication.send_data(data)
                 self.statusChanged.emit(f"[INFO]graspGen {message}")
+                self.wok.stir_on()
+                self.wok.down()
+                self.pan_position = PAN_POS.DOWN
+                data = {"actions": "drop_peanuts", "no_curobo": True}
+                message = self.graspGenCommunication.send_data(data)
+                self.statusChanged.emit(f"[INFO]graspGen {message}")
+
             else:
                 self.run_trajectory("ROS/trajectories/spoon_peanuts.csv", vel=60, acc=500)
         except Exception as e:
@@ -568,7 +578,7 @@ class main_window_ctrl(QMainWindow):
                     if peanuts_amount != 'sufficient' and graspgen_time > remaining_waffle_time:
                         self.statusChanged.emit(f"[INFO] 預估補料時間 ({graspgen_time}s) 長於鬆餅剩餘時間 ({remaining_waffle_time:.1f}s)，先執行收鬆餅流程。")
                         self.drop_spoon_flow()
-                        return 0 # 跳出，不執行補料      
+                        return -1      
                 self.statusChanged.emit("[INFO]GraspGen Refilling Peanuts...")
                 self.pushButton_GrabNDumpPeanuts_clicked()
 
@@ -585,8 +595,8 @@ class main_window_ctrl(QMainWindow):
             # stir_and_heat if needed
             if self.stir_and_heat == True:
                 self.statusChanged.emit("[INFO]chestnuts refilled.")
-                self.check_stir_pos(PAN_POS.DOWN)
                 self.wok.stir_on()
+                self.check_stir_pos(PAN_POS.DOWN)
                 self.chestnut_heat_start_time = time.time()
                 self.peanuts_wait_for_pan_home = True            
                 self.stir_and_heat = False
@@ -619,9 +629,8 @@ class main_window_ctrl(QMainWindow):
             self.statusChanged.emit(f"[INFO]Spooning...")
             self.spoon_single_peanuts()
             self.statusChanged.emit(f"[INFO]Resume stirring.")
-            self.check_stir_pos(PAN_POS.DOWN)
             self.wok.stir_on()
-            time.sleep(5)
+            self.check_stir_pos(PAN_POS.DOWN)
             return 1
         except Exception as e:
             raise e
@@ -1139,9 +1148,6 @@ class main_window_ctrl(QMainWindow):
     def serve_2nd_stove(self):
         self.serve_2nd_stove_flow()
     def serve_2nd_stove_flow(self):
-        # data = {"actions": "drop_fork_to_open_2nd_lid", "no_curobo": True }
-        # message = self.graspGenCommunication.send_data(data)
-        # self.statusChanged.emit(f"[INFO]graspGen {message}")
         self.Open2ndLid_flow()
         if self.grabbing_fork == False:
             self.GrabFork_flow()
@@ -1178,7 +1184,9 @@ class main_window_ctrl(QMainWindow):
             #     continue
 
             try:
-                order = self.tcp.received_orders.get(timeout=1.0)   
+                order = self.tcp.received_orders.get(timeout=1.0)
+                order.peanuts_num = 4
+                order.waffle_num = 8   
                 self.statusChanged.emit(f"[INFO]Serve order received:Table peanuts: {order.peanuts_num} + waffle: {order.waffle_num}.")
                 if order.waffle_num <= self.num_left_waffle:
                     self.num_left_waffle -= order.waffle_num
@@ -1198,8 +1206,8 @@ class main_window_ctrl(QMainWindow):
                     break
 
                 self.serve_both(order.waffle_num, order.peanuts_num)
-
-                self.statusChanged.emit(f"[INFO]Serve order done.\n")
+                self.num_orders +=1
+                self.statusChanged.emit(f"[INFO]Serve order done. Order number: {self.num_orders}\n")
                 self.statusChanged.emit(f"[INFO]Number of left waffle: {self.num_left_waffle}.\n")
                 self.current_order_left_seconds = 0   
 
@@ -1222,6 +1230,7 @@ class main_window_ctrl(QMainWindow):
     def serve_both(self, num_waffle, num_peanuts):
         try:
             # cook waffle first if needed
+            self.peanuts_need_resume = False
             cook_waffle = False
             if num_waffle <= self.num_left_waffle:
                 self.num_left_waffle -= num_waffle
@@ -1246,7 +1255,6 @@ class main_window_ctrl(QMainWindow):
                     self.statusChanged.emit(f"[INFO]Use 2nd stove.\n")
                     self.cook_2nd_stove()
                     second_start_time = time.time()
-
             # then spoon peanuts
             peanuts_spooned_count = 1
             if num_peanuts > 0:            
@@ -1257,13 +1265,18 @@ class main_window_ctrl(QMainWindow):
                     done = self.spoon_peanuts()
                     if done == 1:
                         self.statusChanged.emit(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
-                        peanuts_spooned_count += 1                
+                        peanuts_spooned_count += 1
+                    elif done == -1:
+                        self.statusChanged.emit(f"[INFO] 補料中斷，優先處理鬆餅收餐。")
+                        self.peanuts_need_resume = True
+                        break
                     else: # if peanuts is reprocessing or reheating, back to waffle first
                         self.statusChanged.emit(f"[INFO] 尚未挖取，等待加熱或補料中...")
                         break
 
                     # check if waffle is ready before next spoon
                     if cook_waffle == True and time.time() - self.waffle_first_stove_start_time >= self.time_waffle_heat:
+                        self.statusChanged.emit(f"[INFO]Waffle is ready during spoon peanuts, now switch to serve waffle first.\n")
                         break
 
             if cook_waffle == True:
@@ -1291,14 +1304,40 @@ class main_window_ctrl(QMainWindow):
                     self.num_left_waffle = self.num_left_waffle + 4 - num_waffle                
 
                 self.waffle_first_stove_start_time = 0
+            if self.peanuts_need_resume:
+                self.statusChanged.emit(f"[INFO] 第一筆收餐完成，現在開始補料動作...")
+                self.pushButton_GrabNDumpPeanuts_clicked()
+                self.stir_and_heat = True
+                self.heat_chestnut = True
+                self.wok.stir_on()
+                self.check_stir_pos(PAN_POS.DOWN)
+                self.chestnut_heat_start_time = time.time()
+                self.peanuts_wait_for_pan_home = True
+                self.stir_and_heat = False
+                
+                self.statusChanged.emit(f"[INFO] 補料完成並啟動加熱。結束本訂單，交給下一筆處理。")
+                return # 拋棄本筆剩下的栗子動作，交由下一輪 serve_both 處理
+
 
             # back to peanuts when waffle is done
             while peanuts_spooned_count <= num_peanuts:
                 while self.heat_chestnut == True and time.time() - self.chestnut_heat_start_time < self.time_peanut_heat:
                     print(f"heat chestnut, waited for {time.time() - self.chestnut_heat_start_time} seconds.\n")
                     time.sleep(0.01)
-                
+                self.heat_chestnut = False
+                done = self.spoon_peanuts()
                 self.spoon_peanuts()
+                if done == 1:
+                    self.statusChanged.emit(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
+                    peanuts_spooned_count += 1
+                elif done == -1:
+                    self.statusChanged.emit(f"[INFO] 補料中斷，轉入非同步補料流程並結束本單。")
+                    self.pushButton_GrabNDumpPeanuts_clicked()
+                    self.heat_chestnut = True
+                    self.chestnut_heat_start_time = time.time()
+                    return 
+                else:
+                    break
                 self.statusChanged.emit(f"[INFO]Spoon peanuts: {peanuts_spooned_count}.\n")
                 peanuts_spooned_count += 1
         except Exception as e:

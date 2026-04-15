@@ -5,7 +5,7 @@ class Camera:
     def cam_names(self):
         return ['peanuts']
         
-    def cam_init(self, camera_index = [0]):
+    def cam_init(self, camera_index = [1]):
         self.camera_index = camera_index
         self.cameras = []
         for i in range(len(camera_index)):
@@ -81,7 +81,7 @@ class Camera:
 # ===== 使用範例 =====
 def main():
     cam = Camera()
-    cam.cam_init([0])
+    cam.cam_init([1])
     #for i in range(10):
     while True:
         frames=cam.capture(True)

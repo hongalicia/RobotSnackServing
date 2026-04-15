@@ -5,10 +5,9 @@ import random
 import queue
 
 class order:
-    def __init__(self, peanuts_num, waffle_num, table_num):
+    def __init__(self, peanuts_num, waffle_num):
         self.peanuts_num = peanuts_num
         self.waffle_num = waffle_num
-        self.table_num = table_num
 
 class TcpClient:
     def __init__(self, host: str, port: int):
@@ -71,9 +70,7 @@ class TcpClient:
                         print("Received 'O' command.")
                         peanut_num = int.from_bytes(data[3].to_bytes(1, 'little'), byteorder='little')
                         waffle_num = int.from_bytes(data[4].to_bytes(1, 'little'), byteorder='little')
-                        table_num = int.from_bytes(data[5].to_bytes(1, 'little'), byteorder='little')
-                        new_order = order(peanut_num, waffle_num, table_num)
-                        # new_order = order(peanut_num, waffle_num)
+                        new_order = order(peanut_num, waffle_num)
                         self.received_orders.put(new_order)
                     case 81:  # 'Q'
                         print("Received 'Q' command.")
